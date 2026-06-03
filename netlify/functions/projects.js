@@ -109,7 +109,7 @@ exports.handler = async (event) => {
       if (action === 'delete') {
         const res = await airtableRequest('DELETE', `${TABLE_ID}/${id}`);
         if (res.status === 200) return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
-        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to delete' }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Failed to save', status: res.status, details: res.body }) };
       }
 
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
