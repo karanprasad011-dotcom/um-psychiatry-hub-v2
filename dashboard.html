@@ -181,7 +181,8 @@
     async function loadProjects() {
       try {
         const res = await fetch('/.netlify/functions/projects');
-        const projects = await res.json();
+        const data = await res.json();
+        const projects = Array.isArray(data) ? data : [];
         renderList(projects);
       } catch (err) {
         renderList([]);
