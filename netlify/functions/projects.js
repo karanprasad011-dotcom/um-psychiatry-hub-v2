@@ -1,7 +1,7 @@
 const https = require('https');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'umpsych2026';
-const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN || 'pat57hastw0MzvPiZ.c9b0493bbf8600799720f085692db0f663ee15aef70682f363a4bf39ef37368a';
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE_ID = 'appVpFZgycFM6Seat';
 const TABLE_ID = 'tblcGVrdBixm2RIep';
 
@@ -109,7 +109,7 @@ exports.handler = async (event) => {
       if (action === 'delete') {
         const res = await airtableRequest('DELETE', `${TABLE_ID}/${id}`);
         if (res.status === 200) return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
-        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Failed to save', status: res.status, details: res.body }) };
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to delete' }) };
       }
 
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
