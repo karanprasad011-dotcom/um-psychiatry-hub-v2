@@ -103,7 +103,7 @@ exports.handler = async (event) => {
           const record = res.body.id ? res.body : res.body.records?.[0];
           return { statusCode: 200, headers, body: JSON.stringify({ success: true, project: recordToProject(record) }) };
         }
-        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to save', details: res.body }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: JSON.stringify(res.body) }) };
       }
 
       if (action === 'delete') {
