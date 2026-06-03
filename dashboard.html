@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard · UM Psychiatry Research Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding-top: 64px; background: var(--cream); }
+    .app-nav-links { display: flex; gap: 4px; }
+    .app-nav-link { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all var(--transition); }
+    .app-nav-link:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+    .app-nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); }
+    .gate { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+    .gate-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 48px 40px; max-width: 420px; width: 100%; box-shadow: var(--shadow-md); text-align: center; }
+    .gate-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .gate-card h2 { font-family: var(--font-display); font-size: 1.6rem; color: var(--green-dark); margin-bottom: 8px; }
+    .gate-card p { font-size: 0.88rem; color: var(--gray-600); margin-bottom: 28px; }
+    .gate-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-family: var(--font-body); font-size: 0.92rem; outline: none; margin-bottom: 12px; }
+    .gate-input:focus { border-color: var(--green); }
+    .gate-error { color: #dc2626; font-size: 0.82rem; margin-top: 10px; display: none; }
+    .dashboard { display: none; }
+    .page-header { background: var(--green); padding: 40px 0 32px; }
+    .page-header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .page-header h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .page-header p { color: rgba(255,255,255,0.65); font-size: 0.9rem; }
+    .dashboard-body { padding: 40px 0 80px; }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 420px; gap: 32px; align-items: start; }
+    .section-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); overflow: hidden; }
+    .section-card-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+    .section-card-header h2 { font-family: var(--font-display); font-size: 1.15rem; color: var(--green-dark); }
+    .project-count-badge { background: var(--gray-100); color: var(--gray-600); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 100px; }
+    .admin-project-list { list-style: none; }
+    .admin-project-item { padding: 18px 24px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: flex-start; gap: 16px; transition: background var(--transition); }
+    .admin-project-item:last-child { border-bottom: none; }
+    .admin-project-item:hover { background: var(--gray-100); }
+    .admin-project-info { flex: 1; min-width: 0; }
+    .admin-project-title { font-weight: 600; font-size: 0.92rem; color: var(--green-dark); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-project-meta { font-size: 0.78rem; color: var(--gray-400); }
+    .admin-project-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .action-btn { padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; font-family: var(--font-body); transition: all var(--transition); }
+    .action-btn-edit { background: rgba(0,80,48,0.07); color: var(--green); border-color: rgba(0,80,48,0.15); }
+    .action-btn-edit:hover { background: var(--green); color: var(--white); }
+    .action-btn-delete { background: rgba(220,38,38,0.06); color: #dc2626; border-color: rgba(220,38,38,0.15); }
+    .action-btn-delete:hover { background: #dc2626; color: var(--white); }
+    .empty-list { padding: 48px 24px; text-align: center; color: var(--gray-400); font-size: 0.88rem; }
+    .status-pill { display: inline-block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 100px; margin-left: 8px; }
+    .status-pill.open { background: rgba(34,197,94,0.12); color: #16a34a; }
+    .status-pill.closed { background: var(--gray-200); color: var(--gray-600); }
+    .form-panel { position: sticky; top: 80px; }
+    .project-form { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--gray-900); margin-bottom: 6px; }
+    .required { color: var(--orange); }
+    .form-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-family: var(--font-body); font-size: 0.88rem; color: var(--gray-900); background: var(--white); outline: none; appearance: none; transition: border-color var(--transition); }
+    .form-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,80,48,0.08); }
+    textarea.form-input { resize: vertical; min-height: 90px; line-height: 1.5; }
+    .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239e9b94' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-actions { display: flex; gap: 10px; padding-top: 4px; }
+    .btn-save { flex: 1; padding: 11px 20px; background: var(--green); color: var(--white); border: none; border-radius: 8px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all var(--transition); }
+    .btn-save:hover { background: var(--green-light); }
+    .btn-cancel { padding: 11px 16px; background: var(--gray-100); color: var(--gray-600); border: none; border-radius: 8px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; display: none; }
+    .btn-cancel:hover { background: var(--gray-200); }
+    .form-feedback { font-size: 0.82rem; padding: 10px 14px; border-radius: 8px; display: none; }
+    .form-feedback.success { background: rgba(34,197,94,0.1); color: #16a34a; }
+    .form-feedback.error { background: rgba(220,38,38,0.08); color: #dc2626; }
+    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .form-panel { position: static; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" style="text-decoration:none;">
+        <div class="nav-logo">U</div>
+        <div class="nav-brand-text">
+          <span class="nav-title">UM Psychiatry</span>
+          <span class="nav-sub">Research Hub</span>
+        </div>
+      </a>
+      <div class="app-nav-links">
+        <a href="projects.html" class="app-nav-link">Projects</a>
+        <a href="calendar.html" class="app-nav-link">Calendar</a>
+        <a href="resources.html" class="app-nav-link">Resources</a>
+        <a href="dashboard.html" class="app-nav-link active">Admin</a>
+      </div>
+      <a href="index.html" class="btn btn-outline" style="font-size:0.82rem; padding:6px 16px;">Sign Out</a>
+    </div>
+  </nav>
+
+  <!-- LOGIN GATE -->
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <div class="gate-icon">🔐</div>
+      <h2>Admin Access</h2>
+      <p>Enter the admin password to manage research projects.</p>
+      <input type="password" class="gate-input" id="gate-password" placeholder="Admin password" onkeydown="if(event.key==='Enter') unlock()" />
+      <button class="btn btn-primary btn-full" onclick="unlock()">Enter Dashboard</button>
+      <div class="gate-error" id="gate-error">Incorrect password. Please try again.</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+    <section class="page-header">
+      <div class="container page-header-inner">
+        <div>
+          <h1>Admin Dashboard</h1>
+          <p>Add, edit, and remove research project listings</p>
+        </div>
+        <a href="projects.html" class="btn btn-ghost" style="font-size:0.88rem;">View Live Projects &#8594;</a>
+      </div>
+    </section>
+    <div class="dashboard-body">
+      <div class="container dashboard-grid">
+        <div>
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2>Current Projects</h2>
+              <span class="project-count-badge" id="project-count">Loading...</span>
+            </div>
+            <ul class="admin-project-list" id="admin-project-list">
+              <li class="empty-list">⏳ Loading...</li>
+            </ul>
+          </div>
+        </div>
+        <div class="form-panel">
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 id="form-title">Add New Project</h2>
+            </div>
+            <div class="project-form">
+              <div class="form-feedback" id="form-feedback"></div>
+              <input type="hidden" id="field-id" />
+              <input type="hidden" id="field-created" />
+              <div class="form-group"><label>Project Title <span class="required">*</span></label><input type="text" class="form-input" id="field-title" placeholder="e.g. Depression in Chronic Illness..." /></div>
+              <div class="form-group"><label>Principal Investigator <span class="required">*</span></label><input type="text" class="form-input" id="field-pi" placeholder="e.g. Dr. Jane Smith" /></div>
+              <div class="form-group"><label>Contact Email <span class="required">*</span></label><input type="email" class="form-input" id="field-contact" placeholder="name@miami.edu" /></div>
+              <div class="form-group"><label>Description <span class="required">*</span></label><textarea class="form-input" id="field-description" placeholder="Describe the project, student role, and opportunities..."></textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label>Specialty</label><select class="form-input form-select" id="field-specialty"><option>General Psychiatry</option><option>Addiction Psychiatry</option><option>Consult-Liaison</option><option>Child &amp; Adolescent</option><option>Neuropsychiatry</option><option>Health Disparities</option></select></div>
+                <div class="form-group"><label>Training Level</label><select class="form-input form-select" id="field-level"><option>All Levels</option><option>MS1-MS2</option><option>MS3-MS4</option><option>Resident</option><option>Fellow</option></select></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Time Commitment</label><select class="form-input form-select" id="field-commitment"><option>1-2 hrs/week</option><option>3-5 hrs/week</option><option>5-10 hrs/week</option><option>10+ hrs/week</option></select></div>
+                <div class="form-group"><label>Status</label><select class="form-input form-select" id="field-status"><option value="open">Open</option><option value="closed">Full / Closed</option></select></div>
+              </div>
+              <div class="form-group"><label>Tag Label</label><input type="text" class="form-input" id="field-tag" placeholder="e.g. Clinical Research, Mixed Methods..." /></div>
+              <div class="form-group"><label>Timeline</label><input type="text" class="form-input" id="field-timeline" placeholder="e.g. Start July 2026, Ongoing..." /></div>
+              <div class="form-group"><label>Skills / Background</label><input type="text" class="form-input" id="field-skills" placeholder="e.g. Basic statistics, Spanish a plus..." /></div>
+              <div class="form-actions">
+                <button class="btn-cancel" id="btn-cancel" onclick="resetForm()">Cancel</button>
+                <button class="btn-save" id="btn-save" onclick="saveProject()">Add Project</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_PASSWORD = 'umpsych2026';
+    let adminPassword = '';
+    let editingId = null;
+
+    function unlock() {
+      const pw = document.getElementById('gate-password').value;
+      if (pw === ADMIN_PASSWORD) {
+        adminPassword = pw;
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadProjects();
+      } else {
+        document.getElementById('gate-error').style.display = 'block';
+      }
+    }
+
+    async function loadProjects() {
+      try {
+        const res = await fetch('/.netlify/functions/projects');
+        const projects = await res.json();
+        renderList(projects);
+      } catch (err) {
+        renderList([]);
+        showFeedback('Could not load projects: ' + err.message, 'error');
+      }
+    }
+
+    function renderList(projects) {
+      const list = document.getElementById('admin-project-list');
+      const count = document.getElementById('project-count');
+      count.textContent = projects.length + ' project' + (projects.length !== 1 ? 's' : '');
+      if (projects.length === 0) {
+        list.innerHTML = '<li class="empty-list">📋 No projects yet. Add your first one using the form.</li>';
+        return;
+      }
+      list.innerHTML = projects.map(p =>
+        '<li class="admin-project-item">' +
+        '<div class="admin-project-info">' +
+        '<div class="admin-project-title">' + p.title + '<span class="status-pill ' + p.status + '">' + (p.status === 'open' ? 'Open' : 'Full') + '</span></div>' +
+        '<div class="admin-project-meta">' + p.pi + ' · ' + p.specialty + ' · ' + p.level + '</div>' +
+        '</div>' +
+        '<div class="admin-project-actions">' +
+        '<button class="action-btn action-btn-edit" onclick=\'editProject(' + JSON.stringify(JSON.stringify(p)) + ')\'>Edit</button>' +
+        '<button class="action-btn action-btn-delete" onclick="deleteProject(\'' + p.id + '\')">Delete</button>' +
+        '</div></li>'
+      ).join('');
+    }
+
+    async function saveProject() {
+      const btn = document.getElementById('btn-save');
+      const project = {
+        id: document.getElementById('field-id').value || null,
+        createdAt: document.getElementById('field-created').value || null,
+        title: document.getElementById('field-title').value.trim(),
+        pi: document.getElementById('field-pi').value.trim(),
+        contact: document.getElementById('field-contact').value.trim(),
+        description: document.getElementById('field-description').value.trim(),
+        specialty: document.getElementById('field-specialty').value,
+        level: document.getElementById('field-level').value,
+        commitment: document.getElementById('field-commitment').value,
+        status: document.getElementById('field-status').value,
+        tag: document.getElementById('field-tag').value.trim() || 'Research',
+        timeline: document.getElementById('field-timeline').value.trim(),
+        skills: document.getElementById('field-skills').value.trim(),
+      };
+      if (!project.title || !project.pi || !project.contact || !project.description) {
+        showFeedback('Please fill in all required fields.', 'error');
+        return;
+      }
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'save', project }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showFeedback(editingId ? 'Project updated!' : 'Project added!', 'success');
+          resetForm();
+          loadProjects();
+        } else {
+          showFeedback(data.error || 'Something went wrong.', 'error');
+        }
+      } catch (err) {
+        showFeedback('Error: ' + err.message, 'error');
+      }
+      btn.textContent = editingId ? 'Update Project' : 'Add Project';
+      btn.disabled = false;
+    }
+
+    function editProject(pJson) {
+      const p = JSON.parse(pJson);
+      editingId = p.id;
+      document.getElementById('field-id').value = p.id;
+      document.getElementById('field-created').value = p.createdAt || '';
+      document.getElementById('field-title').value = p.title || '';
+      document.getElementById('field-pi').value = p.pi || '';
+      document.getElementById('field-contact').value = p.contact || '';
+      document.getElementById('field-description').value = p.description || '';
+      document.getElementById('field-specialty').value = p.specialty || 'General Psychiatry';
+      document.getElementById('field-level').value = p.level || 'All Levels';
+      document.getElementById('field-commitment').value = p.commitment || '1-2 hrs/week';
+      document.getElementById('field-status').value = p.status || 'open';
+      document.getElementById('field-tag').value = p.tag || '';
+      document.getElementById('field-timeline').value = p.timeline || '';
+      document.getElementById('field-skills').value = p.skills || '';
+      document.getElementById('form-title').textContent = 'Edit Project';
+      document.getElementById('btn-save').textContent = 'Update Project';
+      document.getElementById('btn-cancel').style.display = 'block';
+      document.querySelector('.form-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function deleteProject(id) {
+      if (!confirm('Delete this project? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/.netlify/functions/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'delete', id }),
+        });
+        const data = await res.json();
+        if (data.success) loadProjects();
+        else showFeedback('Failed to delete.', 'error');
+      } catch (err) {
+        showFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    function resetForm() {
+      editingId = null;
+      document.getElementById('field-id').value = '';
+      document.getElementById('field-created').value = '';
+      ['title','pi','contact','description','tag','timeline','skills'].forEach(f => document.getElementById('field-' + f).value = '');
+      document.getElementById('field-specialty').value = 'General Psychiatry';
+      document.getElementById('field-level').value = 'All Levels';
+      document.getElementById('field-commitment').value = '1-2 hrs/week';
+      document.getElementById('field-status').value = 'open';
+      document.getElementById('form-title').textContent = 'Add New Project';
+      document.getElementById('btn-save').textContent = 'Add Project';
+      document.getElementById('btn-cancel').style.display = 'none';
+      document.getElementById('form-feedback').style.display = 'none';
+    }
+
+    function showFeedback(msg, type) {
+      const el = document.getElementById('form-feedback');
+      el.textContent = msg;
+      el.className = 'form-feedback ' + type;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+  </script>
+</body>
+</html>

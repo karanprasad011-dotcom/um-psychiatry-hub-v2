@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources · UM Psychiatry Research Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding-top: 64px; background: var(--cream); }
+    .app-nav-links { display: flex; gap: 4px; }
+    .app-nav-link {
+      color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.88rem;
+      font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all var(--transition);
+    }
+    .app-nav-link:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+    .app-nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); }
+
+    .page-header { background: var(--green); padding: 48px 0 40px; }
+    .page-header h1 { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .page-header p { color: rgba(255,255,255,0.65); font-size: 0.95rem; }
+
+    .filters-bar {
+      background: var(--white); border-bottom: 1px solid var(--gray-200);
+      padding: 16px 0; position: sticky; top: 64px; z-index: 50;
+    }
+    .filters-inner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .filter-select {
+      padding: 8px 32px 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+      font-family: var(--font-body); font-size: 0.85rem; color: var(--gray-900);
+      background: var(--white);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239e9b94' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; outline: none; appearance: none;
+    }
+    .filter-search {
+      flex: 1; min-width: 200px; padding: 8px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: 8px; font-family: var(--font-body); font-size: 0.85rem; outline: none;
+    }
+    .filter-search:focus, .filter-select:focus { border-color: var(--green); }
+    .filter-count { margin-left: auto; font-size: 0.8rem; color: var(--gray-400); white-space: nowrap; }
+
+    .resources-section { padding: 40px 0 80px; }
+
+    .category-section { margin-bottom: 48px; }
+    .category-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 16px;
+    }
+
+    .resources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+    .resource-card {
+      background: var(--white); border: 1px solid var(--gray-200);
+      border-radius: var(--radius); padding: 24px;
+      transition: all var(--transition); display: flex; flex-direction: column; gap: 12px;
+    }
+    .resource-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--green); }
+
+    .resource-card-top { display: flex; align-items: flex-start; gap: 14px; }
+    .resource-icon {
+      width: 44px; height: 44px; border-radius: 10px; background: rgba(0,80,48,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .resource-icon.orange { background: rgba(244,115,33,0.1); }
+    .resource-icon.blue { background: rgba(30,100,180,0.08); }
+
+    .resource-header h3 { font-size: 1rem; font-weight: 600; color: var(--green-dark); margin-bottom: 4px; }
+    .resource-tag {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 100px; background: rgba(0,80,48,0.08); color: var(--green);
+      display: inline-block;
+    }
+
+    .resource-desc { font-size: 0.85rem; color: var(--gray-600); line-height: 1.6; }
+
+    .resource-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; font-weight: 600; color: var(--orange);
+      text-decoration: none; margin-top: auto; transition: color var(--transition);
+    }
+    .resource-link:hover { color: var(--green); }
+
+    .empty-state { text-align: center; padding: 80px 0; color: var(--gray-400); }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 1.1rem; color: var(--gray-600); margin-bottom: 8px; }
+
+    .sheet-notice {
+      background: #fffbeb; border: 1px solid #f59e0b; border-radius: var(--radius);
+      padding: 14px 18px; margin-bottom: 24px; font-size: 0.85rem; color: #92400e; display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" style="text-decoration:none;">
+        <div class="nav-logo">U</div>
+        <div class="nav-brand-text">
+          <span class="nav-title">UM Psychiatry</span>
+          <span class="nav-sub">Research Hub</span>
+        </div>
+      </a>
+      <div class="app-nav-links">
+        <a href="projects.html" class="app-nav-link">Projects</a>
+        <a href="calendar.html" class="app-nav-link">Calendar</a>
+        <a href="resources.html" class="app-nav-link active">Resources</a>
+        <a href="dashboard.html" class="app-nav-link">Admin</a>
+      </div>
+      <a href="index.html" class="btn btn-outline" style="font-size:0.82rem; padding:6px 16px;">Sign Out</a>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <h1>Resources</h1>
+      <p>Practical guides for navigating research as a UM Psychiatry trainee.</p>
+    </div>
+  </section>
+
+  <div class="filters-bar">
+    <div class="container filters-inner">
+      <input type="text" class="filter-search" placeholder="🔍  Search resources..." id="search-input" oninput="filterResources()" />
+      <select class="filter-select" id="filter-category" onchange="filterResources()">
+        <option value="">All Categories</option>
+        <option>Getting Started</option>
+        <option>IRB & Compliance</option>
+        <option>Mentorship</option>
+        <option>Writing & Publishing</option>
+        <option>Conferences</option>
+        <option>Funding</option>
+      </select>
+      <span class="filter-count" id="filter-count"></span>
+    </div>
+  </div>
+
+  <section class="resources-section">
+    <div class="container">
+      <div class="sheet-notice" id="sheet-notice">
+        📋 No resources connected yet. Add a <strong>Resources</strong> tab to your Google Sheet — see the Admin dashboard for setup instructions.
+      </div>
+      <div id="resources-container">
+        <div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Loading resources...</h3></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const RESOURCES_URL_KEY = 'um_psych_resources_url';
+    let allResources = [];
+
+    const HARDCODED_RESOURCES_URL = ''; // Set after publishing Resources tab
+
+    const PLACEHOLDER_RESOURCES = [
+      { id:'1', title:'How to Navigate the UM IRB', category:'IRB & Compliance', icon:'📋', description:'A step-by-step guide to submitting your first IRB application at the University of Miami, including tips for expedited vs. full board review and common pitfalls to avoid.', link:'', link_label:'View IRB Portal' },
+      { id:'2', title:'Reaching Out to a Research Mentor', category:'Mentorship', icon:'🤝', description:'Templates and strategies for cold-emailing faculty, what to include in your first message, how to follow up, and how to structure an initial meeting with a potential PI.', link:'', link_label:'Download Template' },
+      { id:'3', title:'Writing Your First Abstract', category:'Writing & Publishing', icon:'✍️', description:'A practical guide to structuring a conference abstract: background, objectives, methods, results, and conclusions. Includes examples from successful UM trainee submissions.', link:'', link_label:'View Guide' },
+      { id:'4', title:'Research Basics for Medical Students', category:'Getting Started', icon:'🔬', description:'An introduction to study design, data types, statistical concepts, and research ethics. No prior research experience required. Perfect for MS1s and MS2s starting out.', link:'', link_label:'Start Here' },
+      { id:'5', title:'How to Present at a Conference', category:'Conferences', icon:'🎤', description:'Tips for oral presentations, poster design, and Q&A preparation. Includes a poster template formatted for major psychiatry conferences.', link:'', link_label:'Get Template' },
+      { id:'6', title:'Finding Research Funding', category:'Funding', icon:'💰', description:'Overview of internal UM funding opportunities, NIMH grants for trainees, and APA/ACLP fellowship programs. Includes application timelines and tips.', link:'', link_label:'View Opportunities' },
+      { id:'7', title:'UM Research Compliance Resources', category:'IRB & Compliance', icon:'⚖️', description:'Links to CITI training, conflict of interest forms, and data security requirements for research at UHealth and the Miller School of Medicine.', link:'https://research.miami.edu', link_label:'Visit Research Office' },
+      { id:'8', title:'PubMed & Literature Search Tips', category:'Getting Started', icon:'📚', description:'How to efficiently search PubMed, set up alerts for new publications, use MeSH terms, and manage citations with free tools like Zotero.', link:'https://pubmed.ncbi.nlm.nih.gov', link_label:'Open PubMed' },
+    ];
+
+    async function loadResources() {
+      const url = localStorage.getItem(RESOURCES_URL_KEY) || HARDCODED_RESOURCES_URL;
+      if (!url) {
+        allResources = PLACEHOLDER_RESOURCES;
+        document.getElementById('sheet-notice').style.display = 'block';
+        filterResources();
+        return;
+      }
+      try {
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        const text = await res.text();
+        const parsed = parseCSV(text);
+        allResources = parsed.length > 0 ? parsed : PLACEHOLDER_RESOURCES;
+      } catch (err) {
+        allResources = PLACEHOLDER_RESOURCES;
+      }
+      filterResources();
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      return lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (values[i] || '').trim().replace(/"/g, ''));
+        return obj;
+      }).filter(p => p.id);
+    }
+
+    function parseCSVLine(line) {
+      const result = []; let current = ''; let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; }
+        else if (line[i] === ',' && !inQuotes) { result.push(current); current = ''; }
+        else { current += line[i]; }
+      }
+      result.push(current);
+      return result;
+    }
+
+    function filterResources() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const category = document.getElementById('filter-category').value;
+
+      const filtered = allResources.filter(r => {
+        const matchSearch = !search || r.title.toLowerCase().includes(search) || r.description.toLowerCase().includes(search);
+        const matchCat = !category || r.category === category;
+        return matchSearch && matchCat;
+      });
+
+      document.getElementById('filter-count').textContent = `${filtered.length} resource${filtered.length !== 1 ? 's' : ''}`;
+      renderResources(filtered);
+    }
+
+    function renderResources(list) {
+      const container = document.getElementById('resources-container');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>No resources match your search</h3></div>`;
+        return;
+      }
+
+      // Group by category
+      const groups = {};
+      list.forEach(r => {
+        const cat = r.category || 'General';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(r);
+      });
+
+      container.innerHTML = Object.entries(groups).map(([cat, items]) => `
+        <div class="category-section">
+          <div class="category-label">${cat}</div>
+          <div class="resources-grid">
+            ${items.map(r => `
+              <div class="resource-card">
+                <div class="resource-card-top">
+                  <div class="resource-icon">${r.icon || '📄'}</div>
+                  <div class="resource-header">
+                    <h3>${r.title}</h3>
+                    <span class="resource-tag">${r.category}</span>
+                  </div>
+                </div>
+                <div class="resource-desc">${r.description}</div>
+                ${r.link ? `<a href="${r.link}" target="_blank" class="resource-link">${r.link_label || 'View Resource'} →</a>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadResources();
+  </script>
+</body>
+</html>

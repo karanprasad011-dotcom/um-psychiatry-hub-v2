@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conference Calendar · UM Psychiatry Research Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding-top: 64px; background: var(--cream); }
+    .app-nav-links { display: flex; gap: 4px; }
+    .app-nav-link {
+      color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.88rem;
+      font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all var(--transition);
+    }
+    .app-nav-link:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+    .app-nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); }
+
+    .page-header { background: var(--green); padding: 48px 0 40px; }
+    .page-header h1 { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .page-header p { color: rgba(255,255,255,0.65); font-size: 0.95rem; }
+
+    .filters-bar {
+      background: var(--white); border-bottom: 1px solid var(--gray-200);
+      padding: 16px 0; position: sticky; top: 64px; z-index: 50;
+    }
+    .filters-inner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .filter-search {
+      flex: 1; min-width: 200px; padding: 8px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: 8px; font-family: var(--font-body); font-size: 0.85rem; outline: none;
+      transition: border-color var(--transition);
+    }
+    .filter-search:focus { border-color: var(--green); }
+    .filter-select {
+      padding: 8px 32px 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+      font-family: var(--font-body); font-size: 0.85rem; color: var(--gray-900);
+      background: var(--white);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239e9b94' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; outline: none; appearance: none; transition: border-color var(--transition);
+    }
+    .filter-select:focus { border-color: var(--green); }
+    .filter-count { margin-left: auto; font-size: 0.8rem; color: var(--gray-400); white-space: nowrap; }
+
+    .calendar-section { padding: 40px 0 80px; }
+
+    /* CONFERENCE GROUP CARD */
+    .conf-group {
+      background: var(--white); border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg); overflow: hidden;
+      margin-bottom: 20px; transition: all var(--transition);
+    }
+    .conf-group:hover { box-shadow: var(--shadow-md); }
+
+    .conf-group-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    }
+    .conf-group-name {
+      font-family: var(--font-display); font-size: 1.2rem; font-weight: 700;
+      color: var(--green-dark); margin-bottom: 4px;
+    }
+    .conf-group-org {
+      font-size: 0.82rem; color: var(--gray-400);
+    }
+    .conf-group-link {
+      font-size: 0.78rem; color: var(--orange); text-decoration: none; font-weight: 600;
+      white-space: nowrap; flex-shrink: 0; margin-top: 4px;
+    }
+    .conf-group-link:hover { text-decoration: underline; }
+
+    /* DATE ROWS */
+    .conf-dates { display: grid; grid-template-columns: 1fr 1fr; }
+
+    .conf-date-row {
+      padding: 18px 24px;
+      display: flex; align-items: center; gap: 16px;
+      position: relative;
+    }
+    .conf-date-row:first-child {
+      border-right: 1px solid var(--gray-100);
+    }
+    .conf-date-row.abstract-row { background: rgba(244,115,33,0.03); }
+    .conf-date-row.conference-row { background: rgba(0,80,48,0.02); }
+
+    .date-type-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .date-type-icon.abstract { background: rgba(244,115,33,0.12); }
+    .date-type-icon.conference { background: rgba(0,80,48,0.08); }
+
+    .date-info { flex: 1; min-width: 0; }
+    .date-type-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 3px;
+    }
+    .date-type-label.abstract { color: var(--orange); }
+    .date-type-label.conference { color: var(--green); }
+
+    .date-value {
+      font-size: 1rem; font-weight: 600; color: var(--green-dark);
+    }
+    .date-value.past { color: var(--gray-400); text-decoration: line-through; }
+
+    .date-notes { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+
+    .days-badge {
+      font-size: 0.72rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 100px; white-space: nowrap; flex-shrink: 0;
+    }
+    .days-badge.urgent { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .days-badge.soon { background: rgba(244,115,33,0.12); color: var(--orange); }
+    .days-badge.upcoming { background: rgba(0,80,48,0.08); color: var(--green); }
+    .days-badge.past { background: var(--gray-100); color: var(--gray-400); }
+
+    .conf-date-row.no-date {
+      opacity: 0.45;
+    }
+    .no-date-text { font-size: 0.85rem; color: var(--gray-400); font-style: italic; }
+
+    /* LEGEND */
+    .legend {
+      display: flex; gap: 20px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray-600); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .empty-state { text-align: center; padding: 80px 0; color: var(--gray-400); }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 1.1rem; color: var(--gray-600); }
+
+    @media (max-width: 640px) {
+      .conf-dates { grid-template-columns: 1fr; }
+      .conf-date-row:first-child { border-right: none; border-bottom: 1px solid var(--gray-100); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" style="text-decoration:none;">
+        <div class="nav-logo">U</div>
+        <div class="nav-brand-text">
+          <span class="nav-title">UM Psychiatry</span>
+          <span class="nav-sub">Research Hub</span>
+        </div>
+      </a>
+      <div class="app-nav-links">
+        <a href="projects.html" class="app-nav-link">Projects</a>
+        <a href="calendar.html" class="app-nav-link active">Calendar</a>
+        <a href="resources.html" class="app-nav-link">Resources</a>
+        <a href="dashboard.html" class="app-nav-link">Admin</a>
+      </div>
+      <a href="index.html" class="btn btn-outline" style="font-size:0.82rem; padding:6px 16px;">Sign Out</a>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <h1>Conference Calendar</h1>
+      <p>Track abstract submission deadlines and conference dates for major psychiatry meetings.</p>
+    </div>
+  </section>
+
+  <div class="filters-bar">
+    <div class="container filters-inner">
+      <input type="text" class="filter-search" placeholder="🔍  Search conferences..." id="search-input" oninput="filterConfs()" />
+      <select class="filter-select" id="filter-status" onchange="filterConfs()">
+        <option value="upcoming">Upcoming Only</option>
+        <option value="all">Show All</option>
+      </select>
+      <span class="filter-count" id="filter-count"></span>
+    </div>
+  </div>
+
+  <section class="calendar-section">
+    <div class="container">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Due within 2 weeks</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Due within 45 days</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Upcoming</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-200)"></div> Past</div>
+      </div>
+      <div id="conf-container">
+        <div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Loading calendar...</h3></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const CALENDAR_URL_KEY = 'um_psych_calendar_url';
+    let allConfs = [];
+
+    const HARDCODED_CALENDAR_URL = '';
+
+    // Each conference has: id, name, org, abstract_date, conference_date, location, website, notes
+    const PLACEHOLDER_CONFS = [
+      { id:'1', name:'APA Annual Meeting', org:'American Psychiatric Association', abstract_date:'2026-10-15', conference_date:'2027-05-15', location:'Washington, DC', website:'https://www.psychiatry.org/psychiatrists/meetings', notes:'Premier national psychiatry conference' },
+      { id:'2', name:'ACLP Annual Meeting', org:'Academy of Consultation-Liaison Psychiatry', abstract_date:'2026-06-15', conference_date:'2026-11-11', location:'TBD', website:'https://www.clpsychiatry.org', notes:'' },
+      { id:'3', name:'UM Psychiatry Research Symposium', org:'University of Miami', abstract_date:'2026-10-01', conference_date:'2026-12-04', location:'Miami, FL', website:'', notes:'Internal UM event — all trainees welcome' },
+      { id:'4', name:'WCP World Congress', org:'World Psychiatric Association', abstract_date:'2026-09-01', conference_date:'2027-03-20', location:'TBD', website:'https://www.wpanet.org', notes:'' },
+      { id:'5', name:'AACAP Annual Meeting', org:'American Academy of Child & Adolescent Psychiatry', abstract_date:'2026-04-01', conference_date:'2026-10-27', location:'TBD', website:'https://www.aacap.org', notes:'' },
+    ];
+
+    async function loadConfs() {
+      const url = localStorage.getItem(CALENDAR_URL_KEY) || HARDCODED_CALENDAR_URL;
+      if (!url) {
+        allConfs = PLACEHOLDER_CONFS;
+        filterConfs();
+        return;
+      }
+      try {
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        const text = await res.text();
+        const parsed = parseCSV(text);
+        allConfs = parsed.length > 0 ? parsed : PLACEHOLDER_CONFS;
+      } catch (err) {
+        allConfs = PLACEHOLDER_CONFS;
+      }
+      filterConfs();
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      return lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (values[i] || '').trim().replace(/"/g, ''));
+        return obj;
+      }).filter(p => p.id);
+    }
+
+    function parseCSVLine(line) {
+      const result = []; let current = ''; let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; }
+        else if (line[i] === ',' && !inQuotes) { result.push(current); current = ''; }
+        else { current += line[i]; }
+      }
+      result.push(current);
+      return result;
+    }
+
+    function getDaysLeft(dateStr) {
+      if (!dateStr) return null;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const d = new Date(dateStr); d.setHours(0,0,0,0);
+      return Math.round((d - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function getUrgencyClass(days) {
+      if (days === null) return 'upcoming';
+      if (days < 0) return 'past';
+      if (days <= 14) return 'urgent';
+      if (days <= 45) return 'soon';
+      return 'upcoming';
+    }
+
+    function getDaysLabel(days) {
+      if (days === null) return 'TBD';
+      if (days < 0) return 'Past';
+      if (days === 0) return 'Today!';
+      if (days === 1) return '1 day left';
+      return `${days} days left`;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' });
+    }
+
+    function filterConfs() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const status = document.getElementById('filter-status').value;
+
+      let filtered = allConfs.filter(c => {
+        const matchSearch = !search || c.name.toLowerCase().includes(search) || (c.org||'').toLowerCase().includes(search);
+        if (!matchSearch) return false;
+        if (status === 'upcoming') {
+          const absDay = getDaysLeft(c.abstract_date);
+          const confDay = getDaysLeft(c.conference_date);
+          // Show if either date is in the future
+          const absUpcoming = absDay === null || absDay >= 0;
+          const confUpcoming = confDay === null || confDay >= 0;
+          return absUpcoming || confUpcoming;
+        }
+        return true;
+      });
+
+      // Sort by nearest upcoming date
+      filtered.sort((a, b) => {
+        const aNext = getNextDate(a);
+        const bNext = getNextDate(b);
+        return new Date(aNext) - new Date(bNext);
+      });
+
+      document.getElementById('filter-count').textContent = `${filtered.length} conference${filtered.length !== 1 ? 's' : ''}`;
+      renderConfs(filtered);
+    }
+
+    function getNextDate(c) {
+      const dates = [c.abstract_date, c.conference_date].filter(Boolean);
+      const future = dates.filter(d => getDaysLeft(d) >= 0);
+      if (future.length > 0) return future.sort()[0];
+      return dates.sort().pop() || '9999';
+    }
+
+    function renderConfs(list) {
+      const container = document.getElementById('conf-container');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No conferences match your search</h3></div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(c => {
+        const absDays = getDaysLeft(c.abstract_date);
+        const confDays = getDaysLeft(c.conference_date);
+        const absUrgency = getUrgencyClass(absDays);
+        const confUrgency = getUrgencyClass(confDays);
+
+        return `
+          <div class="conf-group">
+            <div class="conf-group-header">
+              <div>
+                <div class="conf-group-name">${c.name}</div>
+                <div class="conf-group-org">${c.org || ''}${c.location ? ' · ' + c.location : ''}</div>
+                ${c.notes ? `<div style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;">💡 ${c.notes}</div>` : ''}
+              </div>
+              ${c.website ? `<a href="${c.website}" target="_blank" class="conf-group-link">Visit website →</a>` : ''}
+            </div>
+            <div class="conf-dates">
+
+              <!-- ABSTRACT DEADLINE -->
+              <div class="conf-date-row abstract-row ${!c.abstract_date ? 'no-date' : ''}">
+                <div class="date-type-icon abstract">📝</div>
+                <div class="date-info">
+                  <div class="date-type-label abstract">Abstract Deadline</div>
+                  ${c.abstract_date
+                    ? `<div class="date-value ${absUrgency === 'past' ? 'past' : ''}">${formatDate(c.abstract_date)}</div>`
+                    : `<div class="no-date-text">Date TBD</div>`
+                  }
+                </div>
+                ${c.abstract_date ? `<span class="days-badge ${absUrgency}">${getDaysLabel(absDays)}</span>` : ''}
+              </div>
+
+              <!-- CONFERENCE DATE -->
+              <div class="conf-date-row conference-row ${!c.conference_date ? 'no-date' : ''}">
+                <div class="date-type-icon conference">🏛</div>
+                <div class="date-info">
+                  <div class="date-type-label conference">Conference Date</div>
+                  ${c.conference_date
+                    ? `<div class="date-value ${confUrgency === 'past' ? 'past' : ''}">${formatDate(c.conference_date)}</div>`
+                    : `<div class="no-date-text">Date TBD</div>`
+                  }
+                </div>
+                ${c.conference_date ? `<span class="days-badge ${confUrgency}">${getDaysLabel(confDays)}</span>` : ''}
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadConfs();
+  </script>
+</body>
+</html>
