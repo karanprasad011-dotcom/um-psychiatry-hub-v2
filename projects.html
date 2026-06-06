@@ -197,8 +197,9 @@
 
     function openModal(pJson) {
       const p = JSON.parse(pJson);
+      const subject = encodeURIComponent('Research Interest: ' + (p.title || ''));
       const contactBtn = p.status === 'open'
-        ? '<button class="project-apply" onclick="window.location=\'mailto:' + p.contact + '?subject=Research Interest: ' + encodeURIComponent(p.title||'') + '\'">Contact PI &#8594;</button><div class="modal-contact">Opens email to <a href="mailto:' + p.contact + '">' + p.contact + '</a></div>'
+        ? '<button class="project-apply" onclick="window.location=\'mailto:' + p.contact + '?subject=' + subject + '\'">Contact PI &#8594;</button><div class="modal-contact">Opens email to <a href="mailto:' + p.contact + '">' + p.contact + '</a></div>'
         : '<div style="color:var(--gray-400);font-size:0.88rem;font-style:italic;">This project is currently full.</div>';
       document.getElementById('modal-body').innerHTML =
         '<div class="modal-tag"><span class="project-tag">' + (p.tag||'Research') + '</span></div>' +
