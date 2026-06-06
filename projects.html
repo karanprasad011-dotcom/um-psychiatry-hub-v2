@@ -142,9 +142,10 @@
 
     async function loadProjects() {
       try {
-        const res = await fetch('/.netlify/functions/projects');
+        const res = await fetch('/.netlify/functions/projects?table=projects');
         const data = await res.json();
-        allProjects = Array.isArray(data) ? data : [];
+        const records = data.records || [];
+        allProjects = records.map(r => ({ id: r.id, ...r.fields }));
         if (allProjects.length === 0) {
           document.getElementById('projects-grid').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No projects yet</h3><p>Check back soon — opportunities will be posted here.</p></div>';
           document.getElementById('filter-count').textContent = '0 projects';
