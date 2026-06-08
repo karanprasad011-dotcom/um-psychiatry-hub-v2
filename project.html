@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Details · UM Psychiatry Research Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding-top: 64px; background: var(--cream); }
+    .app-nav-links { display: flex; gap: 4px; }
+    .app-nav-link {
+      color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.88rem;
+      font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all var(--transition);
+    }
+    .app-nav-link:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+    .app-nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); }
+
+    .back-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 0;
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--green); text-decoration: none;
+      font-size: 0.88rem; font-weight: 600;
+      transition: gap 0.2s;
+    }
+    .back-btn:hover { gap: 12px; }
+
+    .project-detail-section { padding: 48px 0 80px; }
+
+    .project-detail-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .project-detail-header {
+      background: var(--green);
+      padding: 40px 48px;
+      color: var(--white);
+    }
+    .project-detail-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 100px;
+      background: rgba(255,255,255,0.15); color: var(--white);
+      margin-bottom: 16px;
+    }
+    .project-detail-title {
+      font-family: var(--font-display); font-size: 2rem;
+      font-weight: 700; color: var(--white);
+      line-height: 1.25; margin-bottom: 8px;
+    }
+    .project-detail-pi {
+      font-size: 1rem; color: rgba(255,255,255,0.8);
+      font-weight: 500;
+    }
+    .project-detail-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 16px; font-size: 0.82rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .status-dot.closed { background: rgba(255,255,255,0.4); }
+
+    .project-detail-body { padding: 48px; }
+
+    .detail-section { margin-bottom: 36px; }
+    .detail-section h3 {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--gray-400);
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .detail-section p {
+      font-size: 0.95rem; color: var(--gray-600);
+      line-height: 1.75;
+    }
+
+    .detail-meta-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .detail-meta-item label {
+      display: block; font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--gray-400); margin-bottom: 4px;
+    }
+    .detail-meta-item span {
+      font-size: 0.95rem; color: var(--gray-900); font-weight: 500;
+    }
+
+    .detail-cta {
+      background: var(--gray-100);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 24px;
+      flex-wrap: wrap;
+    }
+    .detail-cta-text h4 {
+      font-size: 1rem; font-weight: 600;
+      color: var(--gray-900); margin-bottom: 4px;
+    }
+    .detail-cta-text p {
+      font-size: 0.85rem; color: var(--gray-600);
+    }
+    .btn-apply {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: var(--green);
+      color: var(--white); border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none; transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-apply:hover { background: var(--green-light); }
+    .project-full-msg {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: var(--gray-200);
+      color: var(--gray-400); border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600;
+    }
+
+    .loading-state {
+      text-align: center; padding: 80px 0; color: var(--gray-400);
+    }
+    .loading-spinner {
+      width: 36px; height: 36px; border: 3px solid var(--gray-200);
+      border-top-color: var(--green); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state {
+      text-align: center; padding: 80px 0; color: var(--gray-400);
+    }
+    .error-state h3 { font-size: 1.1rem; color: var(--gray-600); margin-bottom: 8px; }
+
+    @media (max-width: 640px) {
+      .project-detail-header { padding: 28px 24px; }
+      .project-detail-body { padding: 28px 24px; }
+      .detail-meta-grid { grid-template-columns: 1fr; }
+      .detail-cta { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" style="text-decoration:none;">
+        <div class="nav-logo">U</div>
+        <div class="nav-brand-text">
+          <span class="nav-title">UM Psychiatry</span>
+          <span class="nav-sub">Research Hub</span>
+        </div>
+      </a>
+      <div class="app-nav-links">
+        <a href="projects.html" class="app-nav-link active">Projects</a>
+        <a href="calendar.html" class="app-nav-link">Calendar</a>
+        <a href="resources.html" class="app-nav-link">Resources</a>
+        <a href="dashboard.html" class="app-nav-link">Admin</a>
+      </div>
+      <a href="index.html" class="btn btn-outline" style="font-size:0.82rem; padding:6px 16px;">Sign Out</a>
+    </div>
+  </nav>
+
+  <div class="back-bar">
+    <div class="container">
+      <a href="projects.html" class="back-btn">&#8592; Back to Projects</a>
+    </div>
+  </div>
+
+  <section class="project-detail-section">
+    <div class="container" style="max-width: 760px;">
+      <div id="project-content">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading project...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    async function loadProject() {
+      const container = document.getElementById('project-content');
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (!id) {
+        container.innerHTML = '<div class="error-state"><h3>No project specified</h3><p><a href="projects.html">Browse all projects</a></p></div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/.netlify/functions/projects');
+        const data = await res.json();
+        const projects = Array.isArray(data) ? data : [];
+        const p = projects.find(function(proj) { return proj.id === id || proj.airtableId === id; });
+
+        if (!p) {
+          container.innerHTML = '<div class="error-state"><h3>Project not found</h3><p><a href="projects.html">Browse all projects</a></p></div>';
+          return;
+        }
+
+        document.title = (p.title || 'Project') + ' · UM Psychiatry Research Hub';
+
+        const subject = encodeURIComponent('Research Interest: ' + (p.title || ''));
+        const ctaHtml = p.status === 'open'
+          ? '<a href="mailto:' + p.contact + '?subject=' + subject + '" class="btn-apply">Apply Now &#8594;</a>'
+          : '<span class="project-full-msg">This project is currently full</span>';
+
+        container.innerHTML =
+          '<div class="project-detail-card">' +
+            '<div class="project-detail-header">' +
+              '<div class="project-detail-tag">' + (p.tag || 'Research') + '</div>' +
+              '<div class="project-detail-title">' + (p.title || '') + '</div>' +
+              '<div class="project-detail-pi">' + (p.pi || '') + '</div>' +
+              '<div class="project-detail-status">' +
+                '<span class="status-dot ' + (p.status === 'open' ? '' : 'closed') + '"></span>' +
+                (p.status === 'open' ? 'Accepting Applications' : 'Currently Full') +
+              '</div>' +
+            '</div>' +
+            '<div class="project-detail-body">' +
+              '<div class="detail-section">' +
+                '<h3>About This Project</h3>' +
+                '<p>' + (p.description || 'No description provided.') + '</p>' +
+              '</div>' +
+              '<div class="detail-section">' +
+                '<h3>Project Details</h3>' +
+                '<div class="detail-meta-grid">' +
+                  '<div class="detail-meta-item"><label>Specialty</label><span>' + (p.specialty || '—') + '</span></div>' +
+                  '<div class="detail-meta-item"><label>Training Level</label><span>' + (p.level || '—') + '</span></div>' +
+                  '<div class="detail-meta-item"><label>Time Commitment</label><span>' + (p.commitment || '—') + '</span></div>' +
+                  '<div class="detail-meta-item"><label>Timeline</label><span>' + (p.timeline || '—') + '</span></div>' +
+                  '<div class="detail-meta-item" style="grid-column:1/-1"><label>Skills Needed</label><span>' + (p.skills || 'None required') + '</span></div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="detail-cta">' +
+                '<div class="detail-cta-text">' +
+                  '<h4>Interested in this project?</h4>' +
+                  '<p>Reach out directly to the PI to learn more and express your interest.</p>' +
+                '</div>' +
+                ctaHtml +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+      } catch (err) {
+        container.innerHTML = '<div class="error-state"><h3>Could not load project</h3><p>Please try again later.</p></div>';
+      }
+    }
+
+    loadProject();
+  </script>
+</body>
+</html>
