@@ -7,41 +7,148 @@
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    .calendar-hero {
-      background: linear-gradient(135deg, #005030 0%, #007a47 100%);
-      color: white;
-      padding: 60px 24px 48px;
-      text-align: center;
-    }
+    .navbar { background: #005030; padding: 0 24px; height: 64px; display: flex; align-items: center; }
+    .nav-container { max-width: 1100px; margin: 0 auto; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .nav-brand { color: white; text-decoration: none; font-weight: 700; font-size: 1rem; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
+    .nav-links a:hover { color: white; background: rgba(255,255,255,0.1); }
+    .nav-links a.active { color: white; background: rgba(255,255,255,0.15); }
+    .calendar-hero { background: linear-gradient(135deg, #005030 0%, #007a47 100%); color: white; padding: 60px 24px 48px; text-align: center; }
     .calendar-hero h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 12px; }
     .calendar-hero p { font-size: 1.05rem; opacity: 0.88; max-width: 560px; margin: 0 auto; }
-
     .calendar-container { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
-
-    .loading-state, .empty-state {
-      text-align: center; padding: 60px 24px; color: #6b7280;
-    }
-    .loading-spinner {
-      width: 36px; height: 36px; border: 3px solid #e5e7eb;
-      border-top-color: #005030; border-radius: 50%;
-      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
-    }
+    .loading-state, .empty-state { text-align: center; padding: 60px 24px; color: #6b7280; }
+    .loading-spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #005030; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .conf-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 28px;
-      margin-bottom: 20px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: start;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      transition: box-shadow 0.2s;
-    }
+    .conf-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
     .conf-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-
     .conf-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #111827; margin-bottom: 4px; }
-    .conf-org { font
+    .conf-org { font-size: 0.9rem; color: #6b7280; margin-bottom: 16px; }
+    .conf-dates { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+    .date-block label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 2px; }
+    .date-block.abstract span { font-size: 0.95rem; font-weight: 600; color: #F47321; }
+    .date-block.abstract span.closed { color: #9ca3af; font-style: italic; }
+    .date-block.conference span { font-size: 0.95rem; font-weight: 600; color: #005030; }
+    .conf-meta { font-size: 0.88rem; color: #6b7280; }
+    .conf-notes { font-size: 0.88rem; color: #4b5563; background: #f9fafb; border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
+    .conf-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .btn-website { background: #005030; color: white; border: none; border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
+    .btn-website:hover { background: #003d24; }
+    .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">UM Psychiatry Research Hub</a>
+      <div class="nav-links">
+        <a href="projects.html">Projects</a>
+        <a href="calendar.html" class="active">Calendar</a>
+        <a href="resources.html">Resources</a>
+        <a href="dashboard.html">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="calendar-hero">
+    <h1>Conference Calendar</h1>
+    <p>Track abstract deadlines and conference dates for psychiatry research opportunities.</p>
+  </div>
+
+  <div class="calendar-container">
+    <div id="calendar-content">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading conferences...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatDate(dateStr) {
+      if (!dateStr) return 'TBD';
+      const parts = dateStr.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function isPast(dateStr) {
+      if (!dateStr) return false;
+      const parts = dateStr.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d < new Date();
+    }
+
+    function abstractLabel(dateStr) {
+      if (!dateStr || isPast(dateStr)) {
+        return '<span class="closed">Closed</span>';
+      }
+      return '<span>' + formatDate(dateStr) + '</span>';
+    }
+
+    async function loadCalendar() {
+      const container = document.getElementById('calendar-content');
+      try {
+        const res = await fetch('/.netlify/functions/calendar');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const records = (data.records || []).map(function(r) {
+          return Object.assign({ id: r.id }, r.fields);
+        });
+
+        if (records.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>No conferences added yet. Check back soon!</p></div>';
+          return;
+        }
+
+        records.sort(function(a, b) {
+          if (!a.conference_date) return 1;
+          if (!b.conference_date) return -1;
+          return a.conference_date.localeCompare(b.conference_date);
+        });
+
+        const upcoming = records.filter(function(r) { return !isPast(r.conference_date); });
+        const past = records.filter(function(r) { return isPast(r.conference_date); });
+
+        let html = '';
+        if (upcoming.length > 0) {
+          html += '<div class="section-label">Upcoming Conferences (' + upcoming.length + ')</div>';
+          for (let i = 0; i < upcoming.length; i++) { html += renderCard(upcoming[i], false); }
+        }
+        if (past.length > 0) {
+          html += '<div class="section-label">Past Conferences (' + past.length + ')</div>';
+          for (let i = 0; i < past.length; i++) { html += renderCard(past[i], true); }
+        }
+        container.innerHTML = html;
+
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="empty-state"><p>Could not load conferences. Please try again later.</p></div>';
+      }
+    }
+
+    function renderCard(conf, past) {
+      return '<div class="conf-card" style="' + (past ? 'opacity:0.6' : '') + '">' +
+        '<div>' +
+        '<div class="conf-name">' + (conf.name || 'Untitled Conference') + '</div>' +
+        '<div class="conf-org">' + (conf.org || '') + '</div>' +
+        '<div class="conf-dates">' +
+        '<div class="date-block abstract"><label>Abstract Deadline</label>' + abstractLabel(conf.abstract_date) + '</div>' +
+        '<div class="date-block conference"><label>Conference Date</label><span>' + formatDate(conf.conference_date) + '</span></div>' +
+        '</div>' +
+        '<div class="conf-meta">' + (conf.location ? '📍 ' + conf.location : '') + '</div>' +
+        (conf.notes ? '<div class="conf-notes">💡 ' + conf.notes + '</div>' : '') +
+        '</div>' +
+        '<div class="conf-actions">' +
+        (conf.website ? '<a href="' + conf.website + '" target="_blank" class="btn-website">Visit Website</a>' : '') +
+        '</div>' +
+        '</div>';
+    }
+
+    loadCalendar();
+  </script>
+
+</body>
+</html>
