@@ -53,8 +53,6 @@
     .date-block.conference span { color: #005030; }
 
     .conf-meta { font-size: 0.88rem; color: #6b7280; }
-    .conf-meta span { margin-right: 16px; }
-
     .conf-notes {
       font-size: 0.88rem; color: #4b5563;
       background: #f9fafb; border-radius: 8px;
@@ -77,6 +75,14 @@
       margin: 36px 0 16px; padding-bottom: 8px;
       border-bottom: 1px solid #f3f4f6;
     }
+
+    .navbar { background: #005030; padding: 0 24px; height: 64px; display: flex; align-items: center; }
+    .nav-container { max-width: 1100px; margin: 0 auto; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .nav-brand { color: white; text-decoration: none; font-weight: 700; font-size: 1rem; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
+    .nav-links a:hover { color: white; background: rgba(255,255,255,0.1); }
+    .nav-links a.active { color: white; background: rgba(255,255,255,0.15); }
   </style>
 </head>
 <body>
@@ -125,7 +131,7 @@
     async function loadCalendar() {
       const container = document.getElementById('calendar-content');
       try {
-        const res = await fetch('/.netlify/functions/projects?table=calendar');
+        const res = await fetch('/.netlify/functions/calendar');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const records = (data.records || []).map(r => ({ id: r.id, ...r.fields }));
@@ -135,7 +141,6 @@
           return;
         }
 
-        // Sort by conference_date ascending
         records.sort((a, b) => {
           if (!a.conference_date) return 1;
           if (!b.conference_date) return -1;
