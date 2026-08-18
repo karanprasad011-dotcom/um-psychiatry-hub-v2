@@ -94,9 +94,7 @@
         const res = await fetch('/.netlify/functions/calendar');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-        const records = (data.records || []).map(function(r) {
-          return Object.assign({ id: r.id }, r.fields);
-        });
+        const records = Array.isArray(data) ? data : [];
 
         if (records.length === 0) {
           container.innerHTML = '<div class="empty-state"><p>No conferences added yet. Check back soon!</p></div>';
