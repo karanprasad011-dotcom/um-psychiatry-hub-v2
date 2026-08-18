@@ -200,6 +200,46 @@
         </div>
       </div>
     </div>
+
+    <!-- RESOURCES ADMIN -->
+    <div class="dashboard-body" style="padding-top:0;">
+      <div class="container dashboard-grid">
+        <div>
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2>Resources</h2>
+              <span class="project-count-badge" id="res-count">Loading...</span>
+            </div>
+            <ul class="admin-project-list" id="admin-res-list">
+              <li class="empty-list">⏳ Loading...</li>
+            </ul>
+          </div>
+        </div>
+        <div class="form-panel">
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 id="res-form-title">Add New Resource</h2>
+            </div>
+            <div class="project-form">
+              <div class="form-feedback" id="res-form-feedback"></div>
+              <input type="hidden" id="res-field-id" />
+              <div class="form-group"><label>Title <span class="required">*</span></label><input type="text" class="form-input" id="res-field-title" placeholder="e.g. How to Navigate the UM IRB" /></div>
+              <div class="form-row">
+                <div class="form-group"><label>Category</label><select class="form-input form-select" id="res-field-category"><option>Getting Started</option><option>IRB &amp; Compliance</option><option>Mentorship</option><option>Writing &amp; Publishing</option><option>Conferences</option><option>Funding</option></select></div>
+                <div class="form-group"><label>Icon (emoji)</label><input type="text" class="form-input" id="res-field-icon" placeholder="e.g. 📋" /></div>
+              </div>
+              <div class="form-group"><label>Description</label><textarea class="form-input" id="res-field-description" placeholder="Describe what this resource covers..."></textarea></div>
+              <div class="form-group"><label>Link</label><input type="url" class="form-input" id="res-field-link" placeholder="https://..." /></div>
+              <div class="form-group"><label>Link Label</label><input type="text" class="form-input" id="res-field-link_label" placeholder="e.g. View Guide" /></div>
+              <div class="form-actions">
+                <button class="btn-cancel" id="res-btn-cancel" onclick="resetResForm()">Cancel</button>
+                <button class="btn-save" id="res-btn-save" onclick="saveResource()">Add Resource</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -215,6 +255,7 @@
         document.getElementById('dashboard').style.display = 'block';
         loadProjects();
         loadConferences();
+        loadResources();
       } else {
         document.getElementById('gate-error').style.display = 'block';
       }
@@ -485,6 +526,131 @@
 
     function showConfFeedback(msg, type) {
       const el = document.getElementById('conf-form-feedback');
+      el.textContent = msg;
+      el.className = 'form-feedback ' + type;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    // ===== RESOURCES ADMIN =====
+    let editingResId = null;
+
+    async function loadResources() {
+      try {
+        const res = await fetch('/.netlify/functions/resources');
+        const data = await res.json();
+        const resources = Array.isArray(data) ? data : [];
+        renderResList(resources);
+      } catch (err) {
+        renderResList([]);
+        showResFeedback('Could not load resources: ' + err.message, 'error');
+      }
+    }
+
+    function renderResList(resources) {
+      const list = document.getElementById('admin-res-list');
+      const count = document.getElementById('res-count');
+      count.textContent = resources.length + ' resource' + (resources.length !== 1 ? 's' : '');
+      if (resources.length === 0) {
+        list.innerHTML = '<li class="empty-list">📚 No resources yet. Add your first one using the form.</li>';
+        return;
+      }
+      list.innerHTML = resources.map(r =>
+        '<li class="admin-project-item">' +
+        '<div class="admin-project-info">' +
+        '<div class="admin-project-title">' + (r.icon ? r.icon + ' ' : '') + (r.title || 'Untitled Resource') + '</div>' +
+        '<div class="admin-project-meta">' + (r.category || '') + '</div>' +
+        '</div>' +
+        '<div class="admin-project-actions">' +
+        '<button class="action-btn action-btn-edit" onclick=\'editResource(' + JSON.stringify(JSON.stringify(r)) + ')\'>Edit</button>' +
+        '<button class="action-btn action-btn-delete" onclick="deleteResource(\'' + r.id + '\')">Delete</button>' +
+        '</div></li>'
+      ).join('');
+    }
+
+    async function saveResource() {
+      const btn = document.getElementById('res-btn-save');
+      const resource = {
+        airtableId: document.getElementById('res-field-id').value || null,
+        title: document.getElementById('res-field-title').value.trim(),
+        category: document.getElementById('res-field-category').value,
+        icon: document.getElementById('res-field-icon').value.trim(),
+        description: document.getElementById('res-field-description').value.trim(),
+        link: document.getElementById('res-field-link').value.trim(),
+        link_label: document.getElementById('res-field-link_label').value.trim(),
+      };
+      if (!resource.title) {
+        showResFeedback('Please enter a title.', 'error');
+        return;
+      }
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'save', resource }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showResFeedback(editingResId ? 'Resource updated!' : 'Resource added!', 'success');
+          resetResForm();
+          loadResources();
+        } else {
+          showResFeedback(data.error || 'Something went wrong.', 'error');
+        }
+      } catch (err) {
+        showResFeedback('Error: ' + err.message, 'error');
+      }
+      btn.textContent = editingResId ? 'Update Resource' : 'Add Resource';
+      btn.disabled = false;
+    }
+
+    function editResource(rJson) {
+      const r = JSON.parse(rJson);
+      editingResId = r.id;
+      document.getElementById('res-field-id').value = r.airtableId || r.id;
+      document.getElementById('res-field-title').value = r.title || '';
+      document.getElementById('res-field-category').value = r.category || 'Getting Started';
+      document.getElementById('res-field-icon').value = r.icon || '';
+      document.getElementById('res-field-description').value = r.description || '';
+      document.getElementById('res-field-link').value = r.link || '';
+      document.getElementById('res-field-link_label').value = r.link_label || '';
+      document.getElementById('res-form-title').textContent = 'Edit Resource';
+      document.getElementById('res-btn-save').textContent = 'Update Resource';
+      document.getElementById('res-btn-cancel').style.display = 'block';
+      document.querySelectorAll('.form-panel')[2].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function deleteResource(id) {
+      if (!confirm('Delete this resource? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/.netlify/functions/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'delete', id }),
+        });
+        const data = await res.json();
+        if (data.success) loadResources();
+        else showResFeedback('Failed to delete.', 'error');
+      } catch (err) {
+        showResFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    function resetResForm() {
+      editingResId = null;
+      document.getElementById('res-field-id').value = '';
+      ['title','icon','description','link','link_label'].forEach(f => document.getElementById('res-field-' + f).value = '');
+      document.getElementById('res-field-category').value = 'Getting Started';
+      document.getElementById('res-form-title').textContent = 'Add New Resource';
+      document.getElementById('res-btn-save').textContent = 'Add Resource';
+      document.getElementById('res-btn-cancel').style.display = 'none';
+      document.getElementById('res-form-feedback').style.display = 'none';
+    }
+
+    function showResFeedback(msg, type) {
+      const el = document.getElementById('res-form-feedback');
       el.textContent = msg;
       el.className = 'form-feedback ' + type;
       el.style.display = 'block';
