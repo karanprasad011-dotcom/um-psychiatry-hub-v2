@@ -159,6 +159,47 @@
         </div>
       </div>
     </div>
+
+    <!-- CALENDAR ADMIN -->
+    <div class="dashboard-body" style="padding-top:0;">
+      <div class="container dashboard-grid">
+        <div>
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2>Conference Calendar</h2>
+              <span class="project-count-badge" id="conf-count">Loading...</span>
+            </div>
+            <ul class="admin-project-list" id="admin-conf-list">
+              <li class="empty-list">⏳ Loading...</li>
+            </ul>
+          </div>
+        </div>
+        <div class="form-panel">
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 id="conf-form-title">Add New Conference</h2>
+            </div>
+            <div class="project-form">
+              <div class="form-feedback" id="conf-form-feedback"></div>
+              <input type="hidden" id="conf-field-id" />
+              <div class="form-group"><label>Conference Name <span class="required">*</span></label><input type="text" class="form-input" id="conf-field-name" placeholder="e.g. APA Annual Meeting" /></div>
+              <div class="form-group"><label>Organization</label><input type="text" class="form-input" id="conf-field-org" placeholder="e.g. American Psychiatric Association" /></div>
+              <div class="form-row">
+                <div class="form-group"><label>Abstract Deadline</label><input type="date" class="form-input" id="conf-field-abstract" /></div>
+                <div class="form-group"><label>Conference Date</label><input type="date" class="form-input" id="conf-field-conference" /></div>
+              </div>
+              <div class="form-group"><label>Location</label><input type="text" class="form-input" id="conf-field-location" placeholder="e.g. San Francisco, CA" /></div>
+              <div class="form-group"><label>Website</label><input type="url" class="form-input" id="conf-field-website" placeholder="https://..." /></div>
+              <div class="form-group"><label>Notes</label><textarea class="form-input" id="conf-field-notes" placeholder="Any tips, reminders, or details..."></textarea></div>
+              <div class="form-actions">
+                <button class="btn-cancel" id="conf-btn-cancel" onclick="resetConfForm()">Cancel</button>
+                <button class="btn-save" id="conf-btn-save" onclick="saveConference()">Add Conference</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -173,6 +214,7 @@
         document.getElementById('gate').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         loadProjects();
+        loadConferences();
       } else {
         document.getElementById('gate-error').style.display = 'block';
       }
@@ -310,6 +352,139 @@
 
     function showFeedback(msg, type) {
       const el = document.getElementById('form-feedback');
+      el.textContent = msg;
+      el.className = 'form-feedback ' + type;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    // ===== CALENDAR ADMIN =====
+    let editingConfId = null;
+
+    async function loadConferences() {
+      try {
+        const res = await fetch('/.netlify/functions/calendar');
+        const data = await res.json();
+        const conferences = Array.isArray(data) ? data : [];
+        renderConfList(conferences);
+      } catch (err) {
+        renderConfList([]);
+        showConfFeedback('Could not load conferences: ' + err.message, 'error');
+      }
+    }
+
+    function formatConfDate(dateStr) {
+      if (!dateStr) return 'TBD';
+      const parts = dateStr.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderConfList(conferences) {
+      const list = document.getElementById('admin-conf-list');
+      const count = document.getElementById('conf-count');
+      count.textContent = conferences.length + ' conference' + (conferences.length !== 1 ? 's' : '');
+      if (conferences.length === 0) {
+        list.innerHTML = '<li class="empty-list">📅 No conferences yet. Add your first one using the form.</li>';
+        return;
+      }
+      list.innerHTML = conferences.map(c =>
+        '<li class="admin-project-item">' +
+        '<div class="admin-project-info">' +
+        '<div class="admin-project-title">' + (c.name || 'Untitled Conference') + '</div>' +
+        '<div class="admin-project-meta">' + (c.org ? c.org + ' · ' : '') + 'Conference: ' + formatConfDate(c.conference_date) + ' · Abstract due: ' + formatConfDate(c.abstract_date) + '</div>' +
+        '</div>' +
+        '<div class="admin-project-actions">' +
+        '<button class="action-btn action-btn-edit" onclick=\'editConference(' + JSON.stringify(JSON.stringify(c)) + ')\'>Edit</button>' +
+        '<button class="action-btn action-btn-delete" onclick="deleteConference(\'' + c.id + '\')">Delete</button>' +
+        '</div></li>'
+      ).join('');
+    }
+
+    async function saveConference() {
+      const btn = document.getElementById('conf-btn-save');
+      const conference = {
+        airtableId: document.getElementById('conf-field-id').value || null,
+        name: document.getElementById('conf-field-name').value.trim(),
+        org: document.getElementById('conf-field-org').value.trim(),
+        abstract_date: document.getElementById('conf-field-abstract').value || '',
+        conference_date: document.getElementById('conf-field-conference').value || '',
+        location: document.getElementById('conf-field-location').value.trim(),
+        website: document.getElementById('conf-field-website').value.trim(),
+        notes: document.getElementById('conf-field-notes').value.trim(),
+      };
+      if (!conference.name) {
+        showConfFeedback('Please enter a conference name.', 'error');
+        return;
+      }
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'save', conference }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showConfFeedback(editingConfId ? 'Conference updated!' : 'Conference added!', 'success');
+          resetConfForm();
+          loadConferences();
+        } else {
+          showConfFeedback(data.error || 'Something went wrong.', 'error');
+        }
+      } catch (err) {
+        showConfFeedback('Error: ' + err.message, 'error');
+      }
+      btn.textContent = editingConfId ? 'Update Conference' : 'Add Conference';
+      btn.disabled = false;
+    }
+
+    function editConference(cJson) {
+      const c = JSON.parse(cJson);
+      editingConfId = c.id;
+      document.getElementById('conf-field-id').value = c.airtableId || c.id;
+      document.getElementById('conf-field-name').value = c.name || '';
+      document.getElementById('conf-field-org').value = c.org || '';
+      document.getElementById('conf-field-abstract').value = c.abstract_date || '';
+      document.getElementById('conf-field-conference').value = c.conference_date || '';
+      document.getElementById('conf-field-location').value = c.location || '';
+      document.getElementById('conf-field-website').value = c.website || '';
+      document.getElementById('conf-field-notes').value = c.notes || '';
+      document.getElementById('conf-form-title').textContent = 'Edit Conference';
+      document.getElementById('conf-btn-save').textContent = 'Update Conference';
+      document.getElementById('conf-btn-cancel').style.display = 'block';
+      document.querySelectorAll('.form-panel')[1].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function deleteConference(id) {
+      if (!confirm('Delete this conference? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/.netlify/functions/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, action: 'delete', id }),
+        });
+        const data = await res.json();
+        if (data.success) loadConferences();
+        else showConfFeedback('Failed to delete.', 'error');
+      } catch (err) {
+        showConfFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    function resetConfForm() {
+      editingConfId = null;
+      document.getElementById('conf-field-id').value = '';
+      ['name','org','abstract','conference','location','website','notes'].forEach(f => document.getElementById('conf-field-' + f).value = '');
+      document.getElementById('conf-form-title').textContent = 'Add New Conference';
+      document.getElementById('conf-btn-save').textContent = 'Add Conference';
+      document.getElementById('conf-btn-cancel').style.display = 'none';
+      document.getElementById('conf-form-feedback').style.display = 'none';
+    }
+
+    function showConfFeedback(msg, type) {
+      const el = document.getElementById('conf-form-feedback');
       el.textContent = msg;
       el.className = 'form-feedback ' + type;
       el.style.display = 'block';
