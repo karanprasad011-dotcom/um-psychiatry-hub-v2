@@ -17,25 +17,45 @@
     .page-header { background: var(--green); padding: 48px 0 40px; }
     .page-header h1 { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
     .page-header p { color: rgba(255,255,255,0.65); font-size: 0.95rem; }
-    .calendar-container { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+    .calendar-container { max-width: 860px; margin: 0 auto; padding: 40px 16px 48px; }
     .loading-state, .empty-state { text-align: center; padding: 60px 24px; color: #6b7280; }
     .loading-spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #005030; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .conf-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+
+    /* Status colors: green = upcoming, red = past, blue = TBD */
+    :root { --st-up: #15803d; --st-up-bg: #dcfce7; --st-past: #b91c1c; --st-past-bg: #fee2e2; --st-tbd: #1d4ed8; --st-tbd-bg: #dbeafe; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.82rem; color: #4b5563; margin-bottom: 8px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    .conf-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
     .conf-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .conf-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 14px; }
     .conf-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #111827; margin-bottom: 4px; }
-    .conf-org { font-size: 0.9rem; color: #6b7280; margin-bottom: 16px; }
-    .conf-dates { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
-    .date-block label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 2px; }
-    .date-block.abstract span { font-size: 0.95rem; font-weight: 600; color: #F47321; }
-    .date-block.abstract span.closed { color: #9ca3af; font-style: italic; }
-    .date-block.conference span { font-size: 0.95rem; font-weight: 600; color: #005030; }
-    .conf-meta { font-size: 0.88rem; color: #6b7280; }
-    .conf-notes { font-size: 0.88rem; color: #4b5563; background: #f9fafb; border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
-    .conf-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-    .btn-website { background: #005030; color: white; border: none; border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
+    .conf-org { font-size: 0.9rem; color: #6b7280; }
+    .btn-website { background: #005030; color: white; border: none; border-radius: 8px; padding: 9px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
     .btn-website:hover { background: #003d24; }
-    .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }
+
+    .edition { border-left: 4px solid var(--st-tbd); background: #f9fafb; border-radius: 8px; padding: 14px 16px; margin-top: 10px; }
+    .edition.up { border-left-color: var(--st-up); }
+    .edition.past { border-left-color: var(--st-past); }
+    .edition-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .edition-year { font-weight: 700; font-size: 1rem; color: #111827; }
+    .pill { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 9px; border-radius: 100px; }
+    .pill.up { background: var(--st-up-bg); color: var(--st-up); }
+    .pill.past { background: var(--st-past-bg); color: var(--st-past); }
+    .pill.tbd { background: var(--st-tbd-bg); color: var(--st-tbd); }
+    .edition-dates { display: flex; gap: 24px; flex-wrap: wrap; }
+    .date-block label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 2px; }
+    .date-block span { font-size: 0.95rem; font-weight: 600; }
+    .date-block span.up { color: var(--st-up); }
+    .date-block span.past { color: var(--st-past); }
+    .date-block span.tbd { color: var(--st-tbd); }
+    .conf-meta { font-size: 0.86rem; color: #6b7280; margin-top: 8px; }
+    .conf-notes { font-size: 0.86rem; color: #4b5563; background: white; border: 1px solid #f0f0f0; border-radius: 8px; padding: 8px 12px; margin-top: 10px; }
+    .edition a.small-link { font-size: 0.82rem; color: #005030; font-weight: 600; }
+    .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }
   </style>
 </head>
 <body>
@@ -76,25 +96,108 @@
   </div>
 
   <script>
-    function formatDate(dateStr) {
-      if (!dateStr) return 'TBD';
-      const parts = dateStr.split('-');
-      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    // ---------- Date helpers (all automatic, based on today's date) ----------
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
+    const TODAY = todayStr();
 
-    function isPast(dateStr) {
-      if (!dateStr) return false;
-      const parts = dateStr.split('-');
-      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      return d < new Date();
-    }
+    function toDate(s) { const p = s.split('-'); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+    function fmt(s, opts) { return toDate(s).toLocaleDateString('en-US', opts); }
 
-    function abstractLabel(dateStr) {
-      if (!dateStr || isPast(dateStr)) {
-        return '<span class="closed">Closed</span>';
+    function formatRange(start, end) {
+      if (!start) return 'TBD';
+      if (!end || end === start) return fmt(start, { month: 'long', day: 'numeric', year: 'numeric' });
+      const a = toDate(start), b = toDate(end);
+      if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) {
+        return fmt(start, { month: 'long' }) + ' ' + a.getDate() + '–' + b.getDate() + ', ' + a.getFullYear();
       }
-      return '<span>' + formatDate(dateStr) + '</span>';
+      if (a.getFullYear() === b.getFullYear()) {
+        return fmt(start, { month: 'short', day: 'numeric' }) + ' – ' + fmt(end, { month: 'short', day: 'numeric' }) + ', ' + a.getFullYear();
+      }
+      return fmt(start, { month: 'short', day: 'numeric', year: 'numeric' }) + ' – ' + fmt(end, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // 'tbd' (blue), 'past' (red), 'up' (green)
+    function confStatus(c) {
+      if (!c.conference_date) return 'tbd';
+      const lastDay = c.conference_end_date || c.conference_date;
+      return lastDay < TODAY ? 'past' : 'up';
+    }
+    function confStatusLabel(c) {
+      const st = confStatus(c);
+      if (st === 'tbd') return 'Dates TBD';
+      if (st === 'past') return 'Past';
+      return c.conference_date <= TODAY ? 'Happening now' : 'Upcoming';
+    }
+    function editionYear(c) {
+      return String(c.edition_year || (c.conference_date ? c.conference_date.slice(0, 4) : ''));
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function safeUrl(u) { return /^https?:\/\//i.test(u || '') ? esc(u) : ''; }
+
+    // ---------- Rendering ----------
+    function abstractHtml(c) {
+      if (!c.abstract_date) return confStatus(c) === 'past' ? '<span class="past">Closed</span>' : '<span class="tbd">TBD</span>';
+      if (c.abstract_date < TODAY) return '<span class="past">Closed · ' + fmt(c.abstract_date, { month: 'short', day: 'numeric', year: 'numeric' }) + '</span>';
+      return '<span class="up">' + fmt(c.abstract_date, { month: 'long', day: 'numeric', year: 'numeric' }) + '</span>';
+    }
+
+    function renderEdition(c, headerSite) {
+      const st = confStatus(c);
+      const yr = editionYear(c);
+      const site = safeUrl(c.website);
+      return '<div class="edition ' + st + '">' +
+        '<div class="edition-top">' +
+          (yr ? '<span class="edition-year">' + esc(yr) + '</span>' : '') +
+          '<span class="pill ' + st + '">' + confStatusLabel(c) + '</span>' +
+          (site && c.website !== headerSite ? '<a class="small-link" href="' + site + '" target="_blank" rel="noopener">Website ↗</a>' : '') +
+        '</div>' +
+        '<div class="edition-dates">' +
+          '<div class="date-block"><label>Conference Dates</label><span class="' + st + '">' + formatRange(c.conference_date, c.conference_end_date) + '</span></div>' +
+          '<div class="date-block"><label>Abstract Deadline</label>' + abstractHtml(c) + '</div>' +
+        '</div>' +
+        (c.location ? '<div class="conf-meta">📍 ' + esc(c.location) + '</div>' : '') +
+        (c.notes ? '<div class="conf-notes">💡 ' + esc(c.notes) + '</div>' : '') +
+      '</div>';
+    }
+
+    function renderGroup(g) {
+      const site = g.website;
+      return '<div class="conf-card">' +
+        '<div class="conf-head"><div>' +
+          '<div class="conf-name">' + esc(g.name || 'Untitled Conference') + '</div>' +
+          (g.org ? '<div class="conf-org">' + esc(g.org) + '</div>' : '') +
+        '</div>' +
+        (safeUrl(site) ? '<a href="' + safeUrl(site) + '" target="_blank" rel="noopener" class="btn-website">Visit Website</a>' : '') +
+        '</div>' +
+        g.editions.map(e => renderEdition(e, site)).join('') +
+      '</div>';
+    }
+
+    // Records with the same conference name become one card with one row per year
+    function groupConferences(records) {
+      const map = {};
+      records.forEach(r => {
+        const key = (r.name || 'untitled').trim().toLowerCase();
+        (map[key] = map[key] || []).push(r);
+      });
+      return Object.values(map).map(list => {
+        list.sort((a, b) => {
+          const ya = editionYear(a) || '9999', yb = editionYear(b) || '9999';
+          if (ya !== yb) return ya.localeCompare(yb);
+          return (a.conference_date || '9999').localeCompare(b.conference_date || '9999');
+        });
+        const active = list.filter(e => confStatus(e) !== 'past');
+        const pick = (field) => { const src = (active.length ? active : list).slice().reverse().find(e => e[field]); return src ? src[field] : ''; };
+        const nextDated = active.filter(e => e.conference_date).map(e => e.conference_date).sort()[0] || '';
+        const lastPast = list.filter(e => confStatus(e) === 'past').map(e => e.conference_end_date || e.conference_date).sort().pop() || '';
+        return { name: list[0].name, org: pick('org'), website: pick('website'), editions: list, isActive: active.length > 0, nextDated, lastPast };
+      });
     }
 
     async function loadCalendar() {
@@ -110,48 +213,28 @@
           return;
         }
 
-        records.sort(function(a, b) {
-          if (!a.conference_date) return 1;
-          if (!b.conference_date) return -1;
-          return a.conference_date.localeCompare(b.conference_date);
-        });
+        const groups = groupConferences(records);
+        const current = groups.filter(g => g.isActive).sort((a, b) => (a.nextDated || '9999').localeCompare(b.nextDated || '9999'));
+        const past = groups.filter(g => !g.isActive).sort((a, b) => b.lastPast.localeCompare(a.lastPast));
 
-        const upcoming = records.filter(function(r) { return !isPast(r.conference_date); });
-        const past = records.filter(function(r) { return isPast(r.conference_date); });
-
-        let html = '';
-        if (upcoming.length > 0) {
-          html += '<div class="section-label">Upcoming Conferences (' + upcoming.length + ')</div>';
-          for (let i = 0; i < upcoming.length; i++) { html += renderCard(upcoming[i], false); }
+        let html = '<div class="legend">' +
+          '<span><i style="background:var(--st-up)"></i>Upcoming</span>' +
+          '<span><i style="background:var(--st-past)"></i>Past</span>' +
+          '<span><i style="background:var(--st-tbd)"></i>Dates TBD</span>' +
+        '</div>';
+        if (current.length) {
+          html += '<div class="section-label">Upcoming &amp; Announced (' + current.length + ')</div>';
+          html += current.map(renderGroup).join('');
         }
-        if (past.length > 0) {
+        if (past.length) {
           html += '<div class="section-label">Past Conferences (' + past.length + ')</div>';
-          for (let i = 0; i < past.length; i++) { html += renderCard(past[i], true); }
+          html += past.map(renderGroup).join('');
         }
         container.innerHTML = html;
-
       } catch (err) {
         console.error(err);
         container.innerHTML = '<div class="empty-state"><p>Could not load conferences. Please try again later.</p></div>';
       }
-    }
-
-    function renderCard(conf, past) {
-      return '<div class="conf-card" style="' + (past ? 'opacity:0.6' : '') + '">' +
-        '<div>' +
-        '<div class="conf-name">' + (conf.name || 'Untitled Conference') + '</div>' +
-        '<div class="conf-org">' + (conf.org || '') + '</div>' +
-        '<div class="conf-dates">' +
-        '<div class="date-block abstract"><label>Abstract Deadline</label>' + abstractLabel(conf.abstract_date) + '</div>' +
-        '<div class="date-block conference"><label>Conference Date</label><span>' + formatDate(conf.conference_date) + '</span></div>' +
-        '</div>' +
-        '<div class="conf-meta">' + (conf.location ? '📍 ' + conf.location : '') + '</div>' +
-        (conf.notes ? '<div class="conf-notes">💡 ' + conf.notes + '</div>' : '') +
-        '</div>' +
-        '<div class="conf-actions">' +
-        (conf.website ? '<a href="' + conf.website + '" target="_blank" class="btn-website">Visit Website</a>' : '') +
-        '</div>' +
-        '</div>';
     }
 
     loadCalendar();

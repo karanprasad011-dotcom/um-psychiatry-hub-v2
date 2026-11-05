@@ -67,6 +67,15 @@
     .form-feedback { font-size: 0.82rem; padding: 10px 14px; border-radius: 8px; display: none; }
     .form-feedback.success { background: rgba(34,197,94,0.1); color: #16a34a; }
     .form-feedback.error { background: rgba(220,38,38,0.08); color: #dc2626; }
+    .tbd-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; color: var(--gray-600); cursor: pointer; margin-top: 6px; }
+    .tbd-check input { accent-color: #1d4ed8; }
+    .form-input:disabled { background: var(--gray-100); color: var(--gray-400); }
+    .form-hint { font-size: 0.72rem; color: var(--gray-400); margin-top: 4px; }
+    .status-pill.up { background: #dcfce7; color: #15803d; }
+    .status-pill.past { background: #fee2e2; color: #b91c1c; }
+    .status-pill.tbd { background: #dbeafe; color: #1d4ed8; }
+    .action-btn-next { background: rgba(244,115,33,0.08); color: #c2410c; border-color: rgba(244,115,33,0.2); }
+    .action-btn-next:hover { background: var(--orange); color: var(--white); }
     @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .form-panel { position: static; } }
   </style>
 </head>
@@ -184,9 +193,20 @@
               <input type="hidden" id="conf-field-id" />
               <div class="form-group"><label>Conference Name <span class="required">*</span></label><input type="text" class="form-input" id="conf-field-name" placeholder="e.g. APA Annual Meeting" /></div>
               <div class="form-group"><label>Organization</label><input type="text" class="form-input" id="conf-field-org" placeholder="e.g. American Psychiatric Association" /></div>
+              <div class="form-group">
+                <label>Year / Edition</label>
+                <input type="number" class="form-input" id="conf-field-year" placeholder="e.g. 2027" min="2000" max="2100" />
+                <div class="form-hint">Fills in automatically from the start date. Only needed when dates are TBD.</div>
+              </div>
               <div class="form-row">
-                <div class="form-group"><label>Abstract Deadline</label><input type="date" class="form-input" id="conf-field-abstract" /></div>
-                <div class="form-group"><label>Conference Date</label><input type="date" class="form-input" id="conf-field-conference" /></div>
+                <div class="form-group"><label>Start Date</label><input type="date" class="form-input" id="conf-field-conference" /></div>
+                <div class="form-group"><label>End Date</label><input type="date" class="form-input" id="conf-field-conference-end" /></div>
+              </div>
+              <label class="tbd-check" style="margin-top:-8px;"><input type="checkbox" id="conf-tbd-dates" onchange="toggleTbd('dates')" /> Conference dates TBD</label>
+              <div class="form-group">
+                <label>Abstract Deadline</label>
+                <input type="date" class="form-input" id="conf-field-abstract" />
+                <label class="tbd-check"><input type="checkbox" id="conf-tbd-abstract" onchange="toggleTbd('abstract')" /> Abstract deadline TBD</label>
               </div>
               <div class="form-group"><label>Location</label><input type="text" class="form-input" id="conf-field-location" placeholder="e.g. San Francisco, CA" /></div>
               <div class="form-group"><label>Website</label><input type="url" class="form-input" id="conf-field-website" placeholder="https://..." /></div>
@@ -401,6 +421,22 @@
 
     // ===== CALENDAR ADMIN =====
     let editingConfId = null;
+    let confsById = {};
+
+    function confTodayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function confStatus(c) {
+      if (!c.conference_date) return 'tbd';
+      return (c.conference_end_date || c.conference_date) < confTodayStr() ? 'past' : 'up';
+    }
+    function confEsc(s) {
+      return String(s || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function confYear(c) {
+      return String(c.edition_year || (c.conference_date ? c.conference_date.slice(0, 4) : ''));
+    }
 
     async function loadConferences() {
       try {
@@ -421,41 +457,91 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+    function formatConfRange(start, end) {
+      if (!start) return 'TBD';
+      if (!end || end === start) return formatConfDate(start);
+      return formatConfDate(start) + ' – ' + formatConfDate(end);
+    }
+
     function renderConfList(conferences) {
       const list = document.getElementById('admin-conf-list');
       const count = document.getElementById('conf-count');
+      confsById = {};
+      conferences.forEach(c => { confsById[c.id] = c; });
       count.textContent = conferences.length + ' conference' + (conferences.length !== 1 ? 's' : '');
       if (conferences.length === 0) {
         list.innerHTML = '<li class="empty-list">📅 No conferences yet. Add your first one using the form.</li>';
         return;
       }
-      list.innerHTML = conferences.map(c =>
-        '<li class="admin-project-item">' +
-        '<div class="admin-project-info">' +
-        '<div class="admin-project-title">' + (c.name || 'Untitled Conference') + '</div>' +
-        '<div class="admin-project-meta">' + (c.org ? c.org + ' · ' : '') + 'Conference: ' + formatConfDate(c.conference_date) + ' · Abstract due: ' + formatConfDate(c.abstract_date) + '</div>' +
-        '</div>' +
-        '<div class="admin-project-actions">' +
-        '<button class="action-btn action-btn-edit" onclick=\'editConference(' + JSON.stringify(JSON.stringify(c)) + ')\'>Edit</button>' +
-        '<button class="action-btn action-btn-delete" onclick="deleteConference(\'' + c.id + '\')">Delete</button>' +
-        '</div></li>'
-      ).join('');
+      conferences.sort((a, b) => (a.name || '').localeCompare(b.name || '') || (confYear(a) || '9999').localeCompare(confYear(b) || '9999'));
+      const labels = { up: 'Upcoming', past: 'Past', tbd: 'TBD' };
+      list.innerHTML = conferences.map(c => {
+        const st = confStatus(c);
+        const yr = confYear(c);
+        return '<li class="admin-project-item">' +
+          '<div class="admin-project-info">' +
+          '<div class="admin-project-title">' + confEsc(c.name || 'Untitled Conference') + (yr ? ' · ' + confEsc(yr) : '') + '<span class="status-pill ' + st + '">' + labels[st] + '</span></div>' +
+          '<div class="admin-project-meta">' + (c.org ? confEsc(c.org) + ' · ' : '') + 'Conference: ' + formatConfRange(c.conference_date, c.conference_end_date) + ' · Abstract due: ' + formatConfDate(c.abstract_date) + '</div>' +
+          '</div>' +
+          '<div class="admin-project-actions">' +
+          '<button class="action-btn action-btn-next" title="Add next year\'s edition" onclick="addNextYear(\'' + c.id + '\')">+ Next yr</button>' +
+          '<button class="action-btn action-btn-edit" onclick="editConference(\'' + c.id + '\')">Edit</button>' +
+          '<button class="action-btn action-btn-delete" onclick="deleteConference(\'' + c.id + '\')">Delete</button>' +
+          '</div></li>';
+      }).join('');
+    }
+
+    function toggleTbd(which) {
+      if (which === 'dates') {
+        const on = document.getElementById('conf-tbd-dates').checked;
+        ['conf-field-conference', 'conf-field-conference-end'].forEach(id => {
+          const el = document.getElementById(id);
+          if (on) el.value = '';
+          el.disabled = on;
+        });
+      } else {
+        const on = document.getElementById('conf-tbd-abstract').checked;
+        const el = document.getElementById('conf-field-abstract');
+        if (on) el.value = '';
+        el.disabled = on;
+      }
+    }
+
+    function setTbd(which, on) {
+      document.getElementById(which === 'dates' ? 'conf-tbd-dates' : 'conf-tbd-abstract').checked = on;
+      toggleTbd(which);
     }
 
     async function saveConference() {
       const btn = document.getElementById('conf-btn-save');
+      const tbdDates = document.getElementById('conf-tbd-dates').checked;
+      const tbdAbstract = document.getElementById('conf-tbd-abstract').checked;
       const conference = {
         airtableId: document.getElementById('conf-field-id').value || null,
         name: document.getElementById('conf-field-name').value.trim(),
         org: document.getElementById('conf-field-org').value.trim(),
-        abstract_date: document.getElementById('conf-field-abstract').value || '',
-        conference_date: document.getElementById('conf-field-conference').value || '',
+        edition_year: document.getElementById('conf-field-year').value.trim(),
+        abstract_date: tbdAbstract ? '' : (document.getElementById('conf-field-abstract').value || ''),
+        conference_date: tbdDates ? '' : (document.getElementById('conf-field-conference').value || ''),
+        conference_end_date: tbdDates ? '' : (document.getElementById('conf-field-conference-end').value || ''),
         location: document.getElementById('conf-field-location').value.trim(),
         website: document.getElementById('conf-field-website').value.trim(),
         notes: document.getElementById('conf-field-notes').value.trim(),
       };
       if (!conference.name) {
         showConfFeedback('Please enter a conference name.', 'error');
+        return;
+      }
+      if (conference.conference_end_date && !conference.conference_date) {
+        showConfFeedback('Please add a start date (or clear the end date).', 'error');
+        return;
+      }
+      if (conference.conference_date && conference.conference_end_date && conference.conference_end_date < conference.conference_date) {
+        showConfFeedback('End date is before the start date.', 'error');
+        return;
+      }
+      if (!conference.conference_date && !conference.edition_year) {
+        showConfFeedback('Dates are TBD, so please enter the year (e.g. 2027).', 'error');
         return;
       }
       btn.textContent = 'Saving...';
@@ -469,7 +555,7 @@
         const data = await res.json();
         if (data.success) {
           showConfFeedback(editingConfId ? 'Conference updated!' : 'Conference added!', 'success');
-          resetConfForm();
+          resetConfForm(true);
           loadConferences();
         } else {
           showConfFeedback(data.error || 'Something went wrong.', 'error');
@@ -481,21 +567,45 @@
       btn.disabled = false;
     }
 
-    function editConference(cJson) {
-      const c = JSON.parse(cJson);
-      editingConfId = c.id;
-      document.getElementById('conf-field-id').value = c.airtableId || c.id;
+    function fillConfForm(c) {
       document.getElementById('conf-field-name').value = c.name || '';
       document.getElementById('conf-field-org').value = c.org || '';
-      document.getElementById('conf-field-abstract').value = c.abstract_date || '';
-      document.getElementById('conf-field-conference').value = c.conference_date || '';
+      document.getElementById('conf-field-year').value = c.edition_year || '';
       document.getElementById('conf-field-location').value = c.location || '';
       document.getElementById('conf-field-website').value = c.website || '';
       document.getElementById('conf-field-notes').value = c.notes || '';
+      setTbd('dates', false);
+      setTbd('abstract', false);
+      document.getElementById('conf-field-conference').value = c.conference_date || '';
+      document.getElementById('conf-field-conference-end').value = c.conference_end_date || '';
+      document.getElementById('conf-field-abstract').value = c.abstract_date || '';
+      if (!c.conference_date) setTbd('dates', true);
+      if (!c.abstract_date) setTbd('abstract', true);
+      document.getElementById('conf-btn-cancel').style.display = 'block';
+      document.getElementById('conf-form-feedback').style.display = 'none';
+      document.querySelectorAll('.form-panel')[1].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function editConference(id) {
+      const c = confsById[id];
+      if (!c) return;
+      editingConfId = c.id;
+      document.getElementById('conf-field-id').value = c.airtableId || c.id;
+      fillConfForm(c);
       document.getElementById('conf-form-title').textContent = 'Edit Conference';
       document.getElementById('conf-btn-save').textContent = 'Update Conference';
-      document.getElementById('conf-btn-cancel').style.display = 'block';
-      document.querySelectorAll('.form-panel')[1].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Copies a conference into the form as a NEW record for the following year, dates TBD
+    function addNextYear(id) {
+      const c = confsById[id];
+      if (!c) return;
+      editingConfId = null;
+      document.getElementById('conf-field-id').value = '';
+      const yr = Number(confYear(c)) || new Date().getFullYear();
+      fillConfForm({ name: c.name, org: c.org, website: c.website, edition_year: yr + 1 });
+      document.getElementById('conf-form-title').textContent = 'Add ' + (yr + 1) + ' Edition';
+      document.getElementById('conf-btn-save').textContent = 'Add Conference';
     }
 
     async function deleteConference(id) {
@@ -514,14 +624,16 @@
       }
     }
 
-    function resetConfForm() {
+    function resetConfForm(keepFeedback) {
       editingConfId = null;
       document.getElementById('conf-field-id').value = '';
-      ['name','org','abstract','conference','location','website','notes'].forEach(f => document.getElementById('conf-field-' + f).value = '');
+      ['name','org','year','abstract','conference','conference-end','location','website','notes'].forEach(f => document.getElementById('conf-field-' + f).value = '');
+      setTbd('dates', false);
+      setTbd('abstract', false);
       document.getElementById('conf-form-title').textContent = 'Add New Conference';
       document.getElementById('conf-btn-save').textContent = 'Add Conference';
       document.getElementById('conf-btn-cancel').style.display = 'none';
-      document.getElementById('conf-form-feedback').style.display = 'none';
+      if (keepFeedback !== true) document.getElementById('conf-form-feedback').style.display = 'none';
     }
 
     function showConfFeedback(msg, type) {
