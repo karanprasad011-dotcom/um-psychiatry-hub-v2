@@ -53,6 +53,7 @@
     .date-block span.past { color: var(--st-past); }
     .date-block span.tbd { color: var(--st-tbd); }
     .conf-meta { font-size: 0.86rem; color: #6b7280; margin-top: 8px; }
+    .tbd-text { color: var(--st-tbd); font-weight: 600; }
     .conf-notes { font-size: 0.86rem; color: #4b5563; background: white; border: 1px solid #f0f0f0; border-radius: 8px; padding: 8px 12px; margin-top: 10px; }
     .edition a.small-link { font-size: 0.82rem; color: #005030; font-weight: 600; }
     .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }
@@ -102,6 +103,9 @@
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
     const TODAY = todayStr();
+    // Every conference card shows a row for this year and next year (rolls forward automatically each January)
+    const THIS_YEAR = new Date().getFullYear();
+    const SHOW_YEARS = [THIS_YEAR, THIS_YEAR + 1];
 
     function toDate(s) { const p = s.split('-'); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
     function fmt(s, opts) { return toDate(s).toLocaleDateString('en-US', opts); }
@@ -161,7 +165,8 @@
           '<div class="date-block"><label>Conference Dates</label><span class="' + st + '">' + formatRange(c.conference_date, c.conference_end_date) + '</span></div>' +
           '<div class="date-block"><label>Abstract Deadline</label>' + abstractHtml(c) + '</div>' +
         '</div>' +
-        (c.location ? '<div class="conf-meta">📍 ' + esc(c.location) + '</div>' : '') +
+        (c.location ? '<div class="conf-meta">📍 ' + esc(c.location) + '</div>'
+          : (st !== 'past' ? '<div class="conf-meta">📍 <span class="tbd-text">Location TBD</span></div>' : '')) +
         (c.notes ? '<div class="conf-notes">💡 ' + esc(c.notes) + '</div>' : '') +
       '</div>';
     }
@@ -186,17 +191,26 @@
         const key = (r.name || 'untitled').trim().toLowerCase();
         (map[key] = map[key] || []).push(r);
       });
-      return Object.values(map).map(list => {
+      return Object.values(map).map(all => {
+        // Keep this year and later; older editions drop off automatically
+        const list = all.filter(e => !editionYear(e) || Number(editionYear(e)) >= THIS_YEAR);
+        // Add a "Dates TBD" row for any of this year / next year that has no entry yet
+        SHOW_YEARS.forEach(y => {
+          if (!list.some(e => editionYear(e) === String(y))) {
+            list.push({ name: all[0].name, edition_year: y, placeholder: true });
+          }
+        });
         list.sort((a, b) => {
           const ya = editionYear(a) || '9999', yb = editionYear(b) || '9999';
           if (ya !== yb) return ya.localeCompare(yb);
           return (a.conference_date || '9999').localeCompare(b.conference_date || '9999');
         });
         const active = list.filter(e => confStatus(e) !== 'past');
-        const pick = (field) => { const src = (active.length ? active : list).slice().reverse().find(e => e[field]); return src ? src[field] : ''; };
+        const activeReal = active.filter(e => !e.placeholder);
+        const pick = (field) => { const src = activeReal.slice().reverse().find(e => e[field]) || all.slice().reverse().find(e => e[field]); return src ? src[field] : ''; };
         const nextDated = active.filter(e => e.conference_date).map(e => e.conference_date).sort()[0] || '';
         const lastPast = list.filter(e => confStatus(e) === 'past').map(e => e.conference_end_date || e.conference_date).sort().pop() || '';
-        return { name: list[0].name, org: pick('org'), website: pick('website'), editions: list, isActive: active.length > 0, nextDated, lastPast };
+        return { name: all[0].name, org: pick('org'), website: pick('website'), editions: list, isActive: active.length > 0, nextDated, lastPast };
       });
     }
 

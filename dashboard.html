@@ -208,7 +208,11 @@
                 <input type="date" class="form-input" id="conf-field-abstract" />
                 <label class="tbd-check"><input type="checkbox" id="conf-tbd-abstract" onchange="toggleTbd('abstract')" /> Abstract deadline TBD</label>
               </div>
-              <div class="form-group"><label>Location</label><input type="text" class="form-input" id="conf-field-location" placeholder="e.g. San Francisco, CA" /></div>
+              <div class="form-group">
+                <label>Location</label>
+                <input type="text" class="form-input" id="conf-field-location" placeholder="e.g. San Francisco, CA" />
+                <label class="tbd-check"><input type="checkbox" id="conf-tbd-location" onchange="toggleTbd('location')" /> Location TBD</label>
+              </div>
               <div class="form-group"><label>Website</label><input type="url" class="form-input" id="conf-field-website" placeholder="https://..." /></div>
               <div class="form-group"><label>Notes</label><textarea class="form-input" id="conf-field-notes" placeholder="Any tips, reminders, or details..."></textarea></div>
               <div class="form-actions">
@@ -500,15 +504,15 @@
           el.disabled = on;
         });
       } else {
-        const on = document.getElementById('conf-tbd-abstract').checked;
-        const el = document.getElementById('conf-field-abstract');
+        const on = document.getElementById('conf-tbd-' + which).checked;
+        const el = document.getElementById(which === 'abstract' ? 'conf-field-abstract' : 'conf-field-location');
         if (on) el.value = '';
         el.disabled = on;
       }
     }
 
     function setTbd(which, on) {
-      document.getElementById(which === 'dates' ? 'conf-tbd-dates' : 'conf-tbd-abstract').checked = on;
+      document.getElementById('conf-tbd-' + which).checked = on;
       toggleTbd(which);
     }
 
@@ -524,7 +528,7 @@
         abstract_date: tbdAbstract ? '' : (document.getElementById('conf-field-abstract').value || ''),
         conference_date: tbdDates ? '' : (document.getElementById('conf-field-conference').value || ''),
         conference_end_date: tbdDates ? '' : (document.getElementById('conf-field-conference-end').value || ''),
-        location: document.getElementById('conf-field-location').value.trim(),
+        location: document.getElementById('conf-tbd-location').checked ? '' : document.getElementById('conf-field-location').value.trim(),
         website: document.getElementById('conf-field-website').value.trim(),
         notes: document.getElementById('conf-field-notes').value.trim(),
       };
@@ -571,11 +575,13 @@
       document.getElementById('conf-field-name').value = c.name || '';
       document.getElementById('conf-field-org').value = c.org || '';
       document.getElementById('conf-field-year').value = c.edition_year || '';
-      document.getElementById('conf-field-location').value = c.location || '';
       document.getElementById('conf-field-website').value = c.website || '';
       document.getElementById('conf-field-notes').value = c.notes || '';
       setTbd('dates', false);
       setTbd('abstract', false);
+      setTbd('location', false);
+      document.getElementById('conf-field-location').value = c.location || '';
+      if (!c.location) setTbd('location', true);
       document.getElementById('conf-field-conference').value = c.conference_date || '';
       document.getElementById('conf-field-conference-end').value = c.conference_end_date || '';
       document.getElementById('conf-field-abstract').value = c.abstract_date || '';
@@ -630,6 +636,7 @@
       ['name','org','year','abstract','conference','conference-end','location','website','notes'].forEach(f => document.getElementById('conf-field-' + f).value = '');
       setTbd('dates', false);
       setTbd('abstract', false);
+      setTbd('location', false);
       document.getElementById('conf-form-title').textContent = 'Add New Conference';
       document.getElementById('conf-btn-save').textContent = 'Add Conference';
       document.getElementById('conf-btn-cancel').style.display = 'none';
