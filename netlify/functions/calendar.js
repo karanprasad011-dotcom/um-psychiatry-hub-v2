@@ -5,6 +5,10 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE_ID = 'appVpFZgycFM6Seat';
 const TABLE_ID = 'tblSF0AU4vD8KgfEq';
 
+// Airtable field names used by this function (must match the Airtable table EXACTLY):
+//   name, org, abstract_date, conference_date, conference_end_date,
+//   edition_year, location, website, notes
+
 function airtableRequest(method, path, body) {
   return new Promise((resolve, reject) => {
     const bodyStr = body ? JSON.stringify(body) : null;
@@ -33,17 +37,39 @@ function airtableRequest(method, path, body) {
 }
 
 function recordToConf(record) {
+  const f = record.fields || {};
   return {
     id: record.id,
     airtableId: record.id,
-    name: record.fields.name || '',
-    org: record.fields.org || '',
-    abstract_date: record.fields.abstract_date || '',
-    conference_date: record.fields.conference_date || '',
-    location: record.fields.location || '',
-    website: record.fields.website || '',
-    notes: record.fields.notes || '',
+    name: f.name || '',
+    org: f.org || '',
+    abstract_date: f.abstract_date || '',
+    conference_date: f.conference_date || '',
+    conference_end_date: f.conference_end_date || '',
+    edition_year: f.edition_year || '',
+    location: f.location || '',
+    website: f.website || '',
+    notes: f.notes || '',
   };
+}
+
+// Fetch every record, following Airtable's pagination (100 per page)
+async function fetchAllRecords() {
+  let records = [];
+  let offset = null;
+  do {
+    const path = `${TABLE_ID}?pageSize=100` + (offset ? `&offset=${encodeURIComponent(offset)}` : '');
+    const res = await airtableRequest('GET', path);
+    if (res.status !== 200) throw new Error('Airtable returned ' + res.status);
+    records = records.concat(res.body.records || []);
+    offset = res.body.offset || null;
+  } while (offset);
+  return records;
+}
+
+function cleanDate(value) {
+  // Accept only YYYY-MM-DD; anything else (blank, "TBD") becomes null = TBD
+  return /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value : null;
 }
 
 exports.handler = async (event) => {
@@ -57,12 +83,10 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'GET') {
     try {
-      const res = await airtableRequest('GET', `${TABLE_ID}?maxRecords=100`);
-      if (res.status !== 200) return { statusCode: 200, headers, body: JSON.stringify([]) };
-      const conferences = (res.body.records || []).map(recordToConf);
-      return { statusCode: 200, headers, body: JSON.stringify(conferences) };
+      const records = await fetchAllRecords();
+      return { statusCode: 200, headers, body: JSON.stringify(records.map(recordToConf)) };
     } catch (err) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+      return { statusCode: 200, headers, body: JSON.stringify([]) };
     }
   }
 
@@ -72,23 +96,37 @@ exports.handler = async (event) => {
       if (password !== ADMIN_PASSWORD) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
 
       if (action === 'save') {
+        const start = cleanDate(conference.conference_date);
+        let end = cleanDate(conference.conference_end_date);
+        if (!start) end = null;                 // no start date means the whole thing is TBD
+        if (start && end && end < start) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'End date is before the start date.' }) };
+        }
+        if (end === start) end = null;          // single-day conference
+
+        let year = parseInt(conference.edition_year, 10);
+        if (!year && start) year = Number(start.slice(0, 4));
+        if (!year) year = null;
+
+        // null tells Airtable to CLEAR the field. This is what makes "TBD" work when editing.
         const fields = {
           name: conference.name || '',
           org: conference.org || '',
-          abstract_date: conference.abstract_date || null,
-          conference_date: conference.conference_date || null,
+          abstract_date: cleanDate(conference.abstract_date),
+          conference_date: start,
+          conference_end_date: end,
+          edition_year: year,
           location: conference.location || '',
           website: conference.website || '',
           notes: conference.notes || '',
         };
-        // Airtable date fields reject empty strings; only send if present
-        if (!fields.abstract_date) delete fields.abstract_date;
-        if (!fields.conference_date) delete fields.conference_date;
 
         let res;
         if (conference.airtableId) {
           res = await airtableRequest('PATCH', `${TABLE_ID}/${conference.airtableId}`, { fields });
         } else {
+          // When creating, leave out empty values rather than sending null
+          Object.keys(fields).forEach(k => { if (fields[k] === null) delete fields[k]; });
           res = await airtableRequest('POST', TABLE_ID, { records: [{ fields }] });
         }
 
